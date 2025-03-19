@@ -21,21 +21,17 @@
         }
         .video-container {
             display: flex;
-            flex-direction: row;
             flex-wrap: wrap;
             justify-content: flex-start;
             margin-top: 20px;
         }
         .video-card {
             border: 1px solid #ccc;
-            position: relative;
             width: 250px;
             margin: 10px;
             overflow: hidden;
             cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            text-align: center;
         }
         .video-card img {
             width: 100%;
@@ -46,6 +42,7 @@
             display: flex;
             justify-content: space-between;
             width: 100%;
+            margin-top: 0;
         }
         .preview-button {
             flex: 1;
@@ -57,11 +54,16 @@
             border: none;
             color: white;
         }
-        .preview-button:first-child {
-            background: rgba(255, 0, 0, 0.7);
-        }
-        .preview-button:last-child {
-            background: rgba(0, 0, 255, 0.7);
+        .preview-button:first-child { background: red; }
+        .preview-button:last-child { background: blue; }
+        .video-title {
+            width: 100%;
+            padding: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            background: black;
+            color: white;
+            margin-top: 0;
         }
         .modal {
             display: flex;
@@ -77,14 +79,26 @@
         .modal-content {
             background: white;
             padding: 20px;
-            width: 70%;
-            height: 80%;
-            display: flex;
-        }
-        .modal-left, .modal-right {
             width: 50%;
-            padding: 10px;
-            overflow-y: auto;
+            text-align: center;
+        }
+        .edit-modal {
+            display: flex;
+            width: 60%;
+            height: 80%;
+            background: white;
+            padding: 20px;
+            justify-content: space-between;
+        }
+        .edit-left, .edit-right {
+            width: 48%;
+            text-align: left;
+        }
+        .edit-left img {
+            width: 100%;
+            height: auto;
+            max-height: 250px;
+            object-fit: cover;
         }
         .close {
             position: absolute;
@@ -92,12 +106,6 @@
             right: 15px;
             font-size: 20px;
             cursor: pointer;
-        }
-        .video-preview {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            margin-top: 10px;
         }
     </style>
 </head>
@@ -108,35 +116,46 @@
         
         <div class="video-container">
             <div v-for="(video, index) in videos" :key="index" class="video-card">
-                <img :src="video.cover" @click="openEditModal(video, index)">
+                <img :src="video.cover" @click="openModal(video, true)">
                 <div class="preview-container">
                     <button class="preview-button" @click="openModal(video, true)">Fragman</button>
                     <button class="preview-button" @click="openModal(video, false)">Video</button>
                 </div>
+                <div class="video-title">{{ video.title }}</div>
             </div>
         </div>
 
-        <div v-if="isAdminOpen" class="modal" @click.self="toggleAdmin">
+        <div v-if="selectedVideo" class="modal" @click.self="closeModal">
             <div class="modal-content">
-                <span class="close" @click="toggleAdmin">&times;</span>
-                
-                <div class="modal-left">
-                    <h3>Yeni Video Ekle</h3>
-                    <form @submit.prevent="addVideo">
-                        <label>Başlık: <input type="text" v-model="newVideo.title"></label><br>
-                        <label>Kapak Görseli: <input type="file" @change="handleCoverUpload"></label><br>
-                        <input type="text" v-model="newVideo.cover" placeholder="Kapak Görseli URL"><br>
-                        <label>Fragman Videosu: <input type="file" @change="handleTrailerUpload"></label><br>
-                        <input type="text" v-model="newVideo.trailer" placeholder="Fragman URL"><br>
-                        <label>Uzun Video: <input type="file" @change="handleVideoUpload"></label><br>
-                        <input type="text" v-model="newVideo.video" placeholder="Uzun Video URL"><br>
-                        <button type="submit">Videoyu Ekle</button>
-                        <button type="button" @click="clearVideos" style="background: red; color: white; margin-top: 10px;">Videoları Sıfırla</button>
-                    </form>
+                <span class="close" @click="closeModal">&times;</span>
+                <h3>{{ selectedVideo.title }}</h3>
+                <video controls autoplay style="width: 100%;">
+                    <source :src="isTrailer ? selectedVideo.trailer : selectedVideo.video" type="video/mp4">
+                </video>
+                <br>
+                <button @click="isTrailer = true">Fragman</button>
+                <button @click="isTrailer = false">Video</button>
+            </div>
+        </div>
+
+        <div v-if="isEditOpen" class="modal" @click.self="closeEditModal">
+            <div class="edit-modal">
+                <div class="edit-left">
+                    <img :src="selectedVideo.cover">
+                </div>
+                <div class="edit-right">
+                    <h3>Videoyu Düzenle</h3>
+                    <label>Başlık: <input type="text" v-model="selectedVideo.title"></label><br>
+                    <label>Kapak Görseli: <input type="file" @change="handleEditCoverUpload"></label><br>
+                    <input type="text" v-model="selectedVideo.cover" placeholder="Kapak Görseli URL"><br>
+                    <label>Fragman Videosu: <input type="file" @change="handleEditTrailerUpload"></label><br>
+                    <input type="text" v-model="selectedVideo.trailer" placeholder="Fragman URL"><br>
+                    <label>Uzun Video: <input type="file" @change="handleEditVideoUpload"></label><br>
+                    <input type="text" v-model="selectedVideo.video" placeholder="Uzun Video URL"><br>
+                    <button @click="updateVideo(selectedIndex)">Güncelle</button>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
@@ -144,40 +163,31 @@
             el: "#app",
             data: {
                 isAdminOpen: false,
-                videos: [],
-                newVideo: { title: "", cover: "", trailer: "", video: "" }
+                isEditOpen: false,
+                videos: JSON.parse(localStorage.getItem('videos')) || [],
+                selectedVideo: null,
+                selectedIndex: null,
+                isTrailer: true
             },
             methods: {
                 toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
-                addVideo() {
-                    if (this.newVideo.title && (this.newVideo.cover || this.newVideo.video)) {
-                        this.videos.unshift({ ...this.newVideo });
-                        this.saveVideos();
-                        this.newVideo = { title: "", cover: "", trailer: "", video: "" };
-                    }
-                },
-                clearVideos() {
-                    this.videos = [];
-                    localStorage.removeItem('videos');
-                },
                 openModal(video, isTrailer) {
-                    alert(isTrailer ? "Fragman Açılıyor: " + video.trailer : "Video Açılıyor: " + video.video);
+                    this.selectedVideo = video;
+                    this.isTrailer = isTrailer;
                 },
-                saveVideos() {
-                    localStorage.setItem('videos', JSON.stringify(this.videos));
+                closeModal() { this.selectedVideo = null; },
+                openEditModal(video, index) {
+                    this.selectedVideo = { ...video };
+                    this.selectedIndex = index;
+                    this.isEditOpen = true;
                 },
-                handleCoverUpload(event) {
-                    const file = event.target.files[0];
-                    if (file) this.newVideo.cover = URL.createObjectURL(file);
+                closeEditModal() { this.isEditOpen = false; },
+                updateVideo(index) {
+                    this.videos[index] = { ...this.selectedVideo };
+                    this.saveVideos();
+                    this.closeEditModal();
                 },
-                handleTrailerUpload(event) {
-                    const file = event.target.files[0];
-                    if (file) this.newVideo.trailer = URL.createObjectURL(file);
-                },
-                handleVideoUpload(event) {
-                    const file = event.target.files[0];
-                    if (file) this.newVideo.video = URL.createObjectURL(file);
-                }
+                saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); }
             }
         });
     </script>
