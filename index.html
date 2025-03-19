@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Yönetim Paneli</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .video-card { border: 1px solid #ccc; padding: 10px; margin: 10px; display: inline-block; position: relative; }
+        .video-card:hover .preview { display: block; }
+        .preview { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); color: white; text-align: center; padding-top: 40px; }
+        .btn { display: inline-block; padding: 10px; margin: 5px; background: blue; color: white; text-decoration: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h2>Video Yönetim Paneli</h2>
+        <form @submit.prevent="addVideo">
+            <label>Kategori: <input type="text" v-model="newVideo.category"></label><br>
+            <label>Başlık: <input type="text" v-model="newVideo.title"></label><br>
+            <label>Kapak Görseli URL: <input type="text" v-model="newVideo.cover"></label><br>
+            <label>Fragman URL: <input type="text" v-model="newVideo.trailer"></label><br>
+            <label>Uzun Video URL: <input type="text" v-model="newVideo.video"></label><br>
+            <button type="submit">Videoyu Ekle</button>
+        </form>
+
+        <h3>Videolar</h3>
+        <div v-for="(video, index) in videos" :key="index" class="video-card">
+            <img :src="video.cover" width="200" height="120">
+            <div class="preview">
+                <a class="btn" :href="video.trailer" target="_blank">Fragman</a>
+                <a class="btn" :href="video.video" target="_blank">Video</a>
+            </div>
+            <h4>{{ video.title }}</h4>
+            <p>Kategori: {{ video.category }}</p>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: "#app",
+            data: {
+                newVideo: { category: "", title: "", cover: "", trailer: "", video: "" },
+                videos: []
+            },
+            methods: {
+                addVideo() {
+                    if (this.newVideo.title && this.newVideo.video) {
+                        this.videos.push({ ...this.newVideo });
+                        this.newVideo = { category: "", title: "", cover: "", trailer: "", video: "" };
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
