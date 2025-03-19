@@ -135,14 +135,14 @@
                 <h4>Yeni Video Ekle</h4>
                 <label>Kanal: <input type="text" v-model="newVideo.channel"></label><br>
                 <label>Başlık: <input type="text" v-model="newVideo.title"></label><br>
-                <label>Kapak Görseli: <input type="text" v-model="newVideo.cover"></label><br>
-                <label>Fragman Videosu: <input type="text" v-model="newVideo.trailer"></label><br>
-                <label>Uzun Video: <input type="text" v-model="newVideo.video"></label><br>
+                <label>Kapak Görseli: <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label><br>
+                <label>Fragman Videosu: <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label><br>
+                <label>Uzun Video: <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label><br>
                 <button @click="addVideo">Ekle</button>
 
                 <h4>Videoları Düzenle</h4>
                 <div v-for="(video, index) in videos" :key="index">
-                    <img :src="video.cover" @click="openEditModal(video, index)" width="100">
+                    <img :src="video.cover" width="100">
                     <button @click="openEditModal(video, index)">Düzenle</button>
                 </div>
             </div>
@@ -169,6 +169,15 @@
                     this.isModalOpen = true;
                 },
                 closeModal() { this.isModalOpen = false; },
+                handleCoverUpload(event) {
+                    this.newVideo.cover = URL.createObjectURL(event.target.files[0]);
+                },
+                handleTrailerUpload(event) {
+                    this.newVideo.trailer = URL.createObjectURL(event.target.files[0]);
+                },
+                handleVideoUpload(event) {
+                    this.newVideo.video = URL.createObjectURL(event.target.files[0]);
+                },
                 addVideo() {
                     if (this.newVideo.title && this.newVideo.cover && this.newVideo.video) {
                         this.videos.unshift({ ...this.newVideo });
