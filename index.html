@@ -32,30 +32,34 @@
             text-align: center;
             padding: 5px;
         }
-        .admin-video-card {
-            display: flex;
-            align-items: center;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin: 10px 0;
+        .video-card:hover .preview-container { 
+            display: flex; 
         }
-        .admin-video-card img {
-            width: 100px;
-            height: 60px;
-            object-fit: cover;
-            margin-right: 10px;
-        }
-        .admin-video-card input {
+        .preview-container {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            margin-right: 10px;
-            padding: 5px;
-        }
-        .admin-video-card button {
-            padding: 5px 10px;
-            background: red;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
             color: white;
-            border: none;
+            display: flex;
+            justify-content: space-between;
+        }
+        .preview-button {
+            width: 50%;
+            text-align: center;
+            line-height: 150px;
+            font-size: 18px;
+            font-weight: bold;
             cursor: pointer;
+        }
+        .preview-button:first-child {
+            background: rgba(255, 0, 0, 0.7);
+        }
+        .preview-button:last-child {
+            background: rgba(0, 0, 255, 0.7);
         }
     </style>
 </head>
@@ -74,23 +78,34 @@
                 <label>Uzun Video URL: <input type="text" v-model="newVideo.video"></label><br>
                 <button type="submit">Videoyu Ekle</button>
             </form>
-            
-            <h3>Videolarım</h3>
-            <div v-for="(video, index) in videos" :key="index" class="admin-video-card">
-                <img :src="video.cover">
-                <input type="text" v-model="video.title">
-                <input type="text" v-model="video.category">
-                <input type="text" v-model="video.cover">
-                <input type="text" v-model="video.trailer">
-                <input type="text" v-model="video.video">
-                <button @click="removeVideo(index)">Sil</button>
-            </div>
         </div>
 
         <h3>Videolar</h3>
         <div v-for="(video, index) in videos" :key="index" class="video-card">
             <img :src="video.cover">
             <div class="video-title">{{ video.title }}</div>
+            <div class="preview-container">
+                <div class="preview-button" @click="openModal(video, true)">Fragman</div>
+                <div class="preview-button" @click="openModal(video, false)">Video</div>
+            </div>
+        </div>
+
+        <div v-if="selectedVideo" class="modal" @click.self="closeModal">
+            <div class="modal-content">
+                <span class="close" @click="closeModal">&times;</span>
+                <h3>{{ selectedVideo.title }}</h3>
+                <video v-if="isTrailer" controls autoplay style="width: 100%;">
+                    <source :src="selectedVideo.trailer" type="video/mp4">
+                    Tarayıcınız video etiketini desteklemiyor.
+                </video>
+                <video v-else controls autoplay style="width: 100%;">
+                    <source :src="selectedVideo.video" type="video/mp4">
+                    Tarayıcınız video etiketini desteklemiyor.
+                </video>
+                <br>
+                <button @click="isTrailer = true">Fragman</button>
+                <button @click="isTrailer = false">Tam Video</button>
+            </div>
         </div>
     </div>
 
@@ -101,6 +116,8 @@
                 isAdmin: false,
                 newVideo: { category: "", title: "", cover: "", trailer: "", video: "" },
                 videos: JSON.parse(localStorage.getItem('videos')) || [],
+                selectedVideo: null,
+                isTrailer: true
             },
             methods: {
                 toggleAdmin() {
@@ -116,6 +133,13 @@
                 removeVideo(index) {
                     this.videos.splice(index, 1);
                     this.saveVideos();
+                },
+                openModal(video, trailer) {
+                    this.selectedVideo = video;
+                    this.isTrailer = trailer;
+                },
+                closeModal() {
+                    this.selectedVideo = null;
                 },
                 saveVideos() {
                     localStorage.setItem('videos', JSON.stringify(this.videos));
