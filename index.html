@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Yönetim Paneli</title>
+    <title>Hayalini İzle</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; text-align: center; position: relative; }
+        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f4; padding: 20px; position: relative; }
         .admin-btn {
             position: absolute;
             top: 10px;
@@ -31,6 +31,8 @@
             overflow: hidden;
             cursor: pointer;
             text-align: center;
+            background: white;
+            padding-bottom: 10px;
         }
         .video-card img {
             width: 100%;
@@ -115,26 +117,26 @@
         <h2>Hayalini İzle</h2>
         
         <div class="video-container">
-            <div class="video-card">
-                <img src="https://images.psmcdn.net/teamskeet/fuf/amber_summer_chloe_foxxe/shared/med.jpg" @click="openEditModal">
+            <div v-for="(video, index) in videos" :key="index" class="video-card">
+                <img :src="video.cover" @click="openEditModal(video, index)">
                 <div class="preview-container">
-                    <button class="preview-button" @click="openModal(true)">Fragman</button>
-                    <button class="preview-button" @click="openModal(false)">Video</button>
+                    <button class="preview-button" @click="openModal(video, true)">Fragman</button>
+                    <button class="preview-button" @click="openModal(video, false)">Video</button>
                 </div>
-                <div class="video-title">FREE USE FANTASY</div>
+                <div class="video-title">{{ video.title }}</div>
             </div>
         </div>
 
         <div v-if="isModalOpen" class="modal" @click.self="closeModal">
             <div class="modal-content">
                 <span class="close" @click="closeModal">&times;</span>
-                <h3>FREE USE FANTASY</h3>
+                <h3>{{ selectedVideo.title }}</h3>
                 <video controls autoplay style="width: 100%;">
-                    <source :src="isTrailer ? trailerURL : videoURL" type="video/mp4">
+                    <source :src="isTrailer ? selectedVideo.trailer : selectedVideo.video" type="video/mp4">
                 </video>
                 <br>
-                <button @click="changeVideo(true)">Fragman</button>
-                <button @click="changeVideo(false)">Video</button>
+                <button @click="isTrailer = true">Fragman</button>
+                <button @click="isTrailer = false">Video</button>
             </div>
         </div>
 
@@ -142,11 +144,11 @@
             <div class="modal-content">
                 <span class="close" @click="toggleAdmin">&times;</span>
                 <h3>Yönetici Paneli</h3>
-                <label>Başlık: <input type="text" v-model="videoTitle"></label><br>
-                <label>Kapak Görseli: <input type="file"></label><br>
-                <label>Fragman Videosu: <input type="file"></label><br>
-                <label>Uzun Video: <input type="file"></label><br>
-                <button>Kaydet</button>
+                <label>Başlık: <input type="text" v-model="newVideo.title"></label><br>
+                <label>Kapak Görseli: <input type="text" v-model="newVideo.cover" placeholder="Kapak Resmi URL"></label><br>
+                <label>Fragman Videosu: <input type="text" v-model="newVideo.trailer" placeholder="Fragman URL"></label><br>
+                <label>Uzun Video: <input type="text" v-model="newVideo.video" placeholder="Uzun Video URL"></label><br>
+                <button @click="addVideo">Ekle</button>
             </div>
         </div>
     </div>
@@ -155,27 +157,29 @@
         new Vue({
             el: "#app",
             data: {
-                isModalOpen: false,
                 isAdminOpen: false,
+                isModalOpen: false,
                 isTrailer: true,
-                videoTitle: "FREE USE FANTASY",
-                trailerURL: "https://images.psmcdn.net/fuf/tour/pics/amber_summer_chloe_foxxe/bio_small.mp4",
-                videoURL: "https://fs30.bigwarp.io/v/04/00278/qeu8tyij2va2_x/x.mp4?t=LsMdfz5LiljiN_0j9wOi5FPdjz5u39uW0ln6I2SA7e8&s=1742385559&e=43200&f=1391792&sp=1000&i=0.0"
+                videos: JSON.parse(localStorage.getItem('videos')) || [],
+                selectedVideo: null,
+                newVideo: { title: "", cover: "", trailer: "", video: "" }
             },
             methods: {
-                openModal(isTrailer) {
+                toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
+                openModal(video, isTrailer) {
+                    this.selectedVideo = video;
+                    this.isTrailer = isTrailer;
                     this.isModalOpen = true;
-                    this.isTrailer = isTrailer;
                 },
-                closeModal() {
-                    this.isModalOpen = false;
+                closeModal() { this.isModalOpen = false; },
+                addVideo() {
+                    if (this.newVideo.title && this.newVideo.cover && this.newVideo.video) {
+                        this.videos.push({ ...this.newVideo });
+                        this.saveVideos();
+                        this.newVideo = { title: "", cover: "", trailer: "", video: "" };
+                    }
                 },
-                changeVideo(isTrailer) {
-                    this.isTrailer = isTrailer;
-                },
-                toggleAdmin() {
-                    this.isAdminOpen = !this.isAdminOpen;
-                }
+                saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); }
             }
         });
     </script>
