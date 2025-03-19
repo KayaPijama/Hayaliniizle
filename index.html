@@ -59,6 +59,33 @@
         .preview-button:last-child {
             background: rgba(0, 0, 255, 0.7);
         }
+        .admin-video-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .admin-video-item {
+            width: 250px;
+            margin: 10px;
+            text-align: left;
+        }
+        .admin-video-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .admin-video-item input {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+        }
+        .admin-video-item button {
+            width: 49%;
+            margin-top: 5px;
+            padding: 5px;
+            cursor: pointer;
+        }
         .modal {
             display: flex;
             justify-content: center;
@@ -101,17 +128,18 @@
                 <label>Uzun Video URL: <input type="text" v-model="newVideo.video"></label><br>
                 <button type="submit">Videoyu Ekle</button>
             </form>
-        </div>
 
-        <h3>Videolar</h3>
-        <div v-for="(video, index) in videos" :key="index" class="video-container">
-            <div class="video-card">
-                <img :src="video.cover">
-                <div class="video-title">{{ video.title }}</div>
-            </div>
-            <div class="preview-container">
-                <button class="preview-button" @click="openModal(video, true)">Fragman</button>
-                <button class="preview-button" @click="openModal(video, false)">Video</button>
+            <h3>Videolarım</h3>
+            <div class="admin-video-list">
+                <div v-for="(video, index) in videos" :key="index" class="admin-video-item">
+                    <img :src="video.cover">
+                    <input type="text" v-model="video.title" placeholder="Başlık">
+                    <input type="text" v-model="video.cover" placeholder="Kapak Görseli URL">
+                    <input type="text" v-model="video.trailer" placeholder="Fragman URL">
+                    <input type="text" v-model="video.video" placeholder="Uzun Video URL">
+                    <button @click="updateVideo(index)">Güncelle</button>
+                    <button @click="removeVideo(index)" style="background-color: red; color: white;">Sil</button>
+                </div>
             </div>
         </div>
 
@@ -151,25 +179,12 @@
                         this.newVideo = { category: "", title: "", cover: "", trailer: "", video: "" };
                     }
                 },
+                updateVideo(index) {
+                    this.saveVideos();
+                },
                 removeVideo(index) {
                     this.videos.splice(index, 1);
                     this.saveVideos();
-                },
-                openModal(video, trailer) {
-                    this.selectedVideo = video;
-                    this.isTrailer = trailer;
-                    this.$nextTick(() => {
-                        this.$refs.videoPlayer.load();
-                    });
-                },
-                closeModal() {
-                    this.selectedVideo = null;
-                },
-                changeVideo(trailer) {
-                    this.isTrailer = trailer;
-                    this.$nextTick(() => {
-                        this.$refs.videoPlayer.load();
-                    });
                 },
                 saveVideos() {
                     localStorage.setItem('videos', JSON.stringify(this.videos));
