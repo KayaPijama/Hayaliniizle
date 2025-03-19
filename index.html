@@ -127,30 +127,22 @@
             </div>
         </div>
 
-        <div v-if="isModalOpen" class="modal" @click.self="closeModal">
-            <div class="modal-content">
-                <span class="close" @click="closeModal">&times;</span>
-                <h3>{{ selectedVideo.title }}</h3>
-                <video controls autoplay style="width: 100%;">
-                    <source :src="isTrailer ? selectedVideo.trailer : selectedVideo.video" type="video/mp4">
-                </video>
-                <br>
-                <button @click="isTrailer = true">Fragman</button>
-                <button @click="isTrailer = false">Video</button>
+        <div v-if="isEditOpen" class="modal" @click.self="closeEditModal">
+            <div class="edit-modal">
+                <div class="edit-left">
+                    <img :src="selectedVideo.cover">
+                </div>
+                <div class="edit-right">
+                    <h3>Videoyu Düzenle</h3>
+                    <label>Başlık: <input type="text" v-model="selectedVideo.title"></label><br>
+                    <label>Kapak Görseli: <input type="file" @change="handleEditCoverUpload"> veya <input type="text" v-model="selectedVideo.cover"></label><br>
+                    <label>Fragman Videosu: <input type="file" @change="handleEditTrailerUpload"> veya <input type="text" v-model="selectedVideo.trailer"></label><br>
+                    <label>Uzun Video: <input type="file" @change="handleEditVideoUpload"> veya <input type="text" v-model="selectedVideo.video"></label><br>
+                    <button @click="updateVideo(selectedIndex)">Güncelle</button>
+                </div>
             </div>
         </div>
 
-        <div v-if="isAdminOpen" class="modal" @click.self="toggleAdmin">
-            <div class="modal-content">
-                <span class="close" @click="toggleAdmin">&times;</span>
-                <h3>Yönetici Paneli</h3>
-                <label>Başlık: <input type="text" v-model="newVideo.title"></label><br>
-                <label>Kapak Görseli: <input type="text" v-model="newVideo.cover" placeholder="Kapak Resmi URL"></label><br>
-                <label>Fragman Videosu: <input type="text" v-model="newVideo.trailer" placeholder="Fragman URL"></label><br>
-                <label>Uzun Video: <input type="text" v-model="newVideo.video" placeholder="Uzun Video URL"></label><br>
-                <button @click="addVideo">Ekle</button>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -158,11 +150,12 @@
             el: "#app",
             data: {
                 isAdminOpen: false,
+                isEditOpen: false,
                 isModalOpen: false,
                 isTrailer: true,
                 videos: JSON.parse(localStorage.getItem('videos')) || [],
                 selectedVideo: null,
-                newVideo: { title: "", cover: "", trailer: "", video: "" }
+                selectedIndex: null
             },
             methods: {
                 toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
@@ -172,12 +165,25 @@
                     this.isModalOpen = true;
                 },
                 closeModal() { this.isModalOpen = false; },
-                addVideo() {
-                    if (this.newVideo.title && this.newVideo.cover && this.newVideo.video) {
-                        this.videos.push({ ...this.newVideo });
-                        this.saveVideos();
-                        this.newVideo = { title: "", cover: "", trailer: "", video: "" };
-                    }
+                openEditModal(video, index) {
+                    this.selectedVideo = { ...video };
+                    this.selectedIndex = index;
+                    this.isEditOpen = true;
+                },
+                closeEditModal() { this.isEditOpen = false; },
+                handleEditCoverUpload(event) {
+                    this.selectedVideo.cover = URL.createObjectURL(event.target.files[0]);
+                },
+                handleEditTrailerUpload(event) {
+                    this.selectedVideo.trailer = URL.createObjectURL(event.target.files[0]);
+                },
+                handleEditVideoUpload(event) {
+                    this.selectedVideo.video = URL.createObjectURL(event.target.files[0]);
+                },
+                updateVideo(index) {
+                    this.videos[index] = { ...this.selectedVideo };
+                    this.saveVideos();
+                    this.closeEditModal();
                 },
                 saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); }
             }
