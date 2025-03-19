@@ -127,6 +127,38 @@
             </div>
         </div>
 
+        <div v-if="isModalOpen" class="modal" @click.self="closeModal">
+            <div class="modal-content">
+                <span class="close" @click="closeModal">&times;</span>
+                <h3>{{ selectedVideo.title }}</h3>
+                <video controls autoplay style="width: 100%;">
+                    <source :src="isTrailer ? selectedVideo.trailer : selectedVideo.video" type="video/mp4">
+                </video>
+                <br>
+                <button @click="isTrailer = true">Fragman</button>
+                <button @click="isTrailer = false">Video</button>
+            </div>
+        </div>
+
+        <div v-if="isAdminOpen" class="modal" @click.self="toggleAdmin">
+            <div class="modal-content">
+                <span class="close" @click="toggleAdmin">&times;</span>
+                <h3>Yönetici Paneli</h3>
+
+                <h4>Yeni Video Ekle</h4>
+                <label>Başlık: <input type="text" v-model="newVideo.title"></label><br>
+                <label>Kapak Görseli: <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label><br>
+                <label>Fragman Videosu: <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label><br>
+                <label>Uzun Video: <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label><br>
+                <button @click="addVideo">Ekle</button>
+
+                <h4>Videoları Düzenle</h4>
+                <div v-for="(video, index) in videos" :key="index">
+                    <img :src="video.cover" @click="openEditModal(video, index)" width="100">
+                </div>
+            </div>
+        </div>
+
         <div v-if="isEditOpen" class="modal" @click.self="closeEditModal">
             <div class="edit-modal">
                 <div class="edit-left">
@@ -159,33 +191,17 @@
             },
             methods: {
                 toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
-                openModal(video, isTrailer) {
-                    this.selectedVideo = video;
-                    this.isTrailer = isTrailer;
-                    this.isModalOpen = true;
-                },
-                closeModal() { this.isModalOpen = false; },
                 openEditModal(video, index) {
                     this.selectedVideo = { ...video };
                     this.selectedIndex = index;
                     this.isEditOpen = true;
                 },
                 closeEditModal() { this.isEditOpen = false; },
-                handleEditCoverUpload(event) {
-                    this.selectedVideo.cover = URL.createObjectURL(event.target.files[0]);
-                },
-                handleEditTrailerUpload(event) {
-                    this.selectedVideo.trailer = URL.createObjectURL(event.target.files[0]);
-                },
-                handleEditVideoUpload(event) {
-                    this.selectedVideo.video = URL.createObjectURL(event.target.files[0]);
-                },
                 updateVideo(index) {
                     this.videos[index] = { ...this.selectedVideo };
                     this.saveVideos();
                     this.closeEditModal();
-                },
-                saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); }
+                }
             }
         });
     </script>
