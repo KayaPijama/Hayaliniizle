@@ -30,12 +30,12 @@
             border: 1px solid #ccc;
             position: relative;
             width: 250px;
-            height: 180px;
             margin: 10px;
             overflow: hidden;
             cursor: pointer;
             display: flex;
             flex-direction: column;
+            align-items: center;
         }
         .video-card img {
             width: 100%;
@@ -45,14 +45,14 @@
         .preview-container {
             display: flex;
             justify-content: space-between;
-            margin-top: 5px;
+            width: 100%;
         }
         .preview-button {
             flex: 1;
             text-align: center;
             font-size: 14px;
             font-weight: bold;
-            padding: 5px;
+            padding: 8px;
             cursor: pointer;
             border: none;
             color: white;
@@ -131,30 +131,12 @@
                         <label>Uzun Video: <input type="file" @change="handleVideoUpload"></label><br>
                         <input type="text" v-model="newVideo.video" placeholder="Uzun Video URL"><br>
                         <button type="submit">Videoyu Ekle</button>
+                        <button type="button" @click="clearVideos" style="background: red; color: white; margin-top: 10px;">Videoları Sıfırla</button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <div v-if="isEditOpen" class="modal" @click.self="closeEditModal">
-            <div class="modal-content">
-                <span class="close" @click="closeEditModal">&times;</span>
-                <div class="modal-left">
-                    <img :src="selectedVideo.cover" class="video-preview">
-                </div>
-                <div class="modal-right">
-                    <h3>Videoyu Düzenle</h3>
-                    <label>Başlık: <input type="text" v-model="selectedVideo.title"></label><br>
-                    <label>Kapak Görseli: <input type="file" @change="handleEditCoverUpload"></label><br>
-                    <input type="text" v-model="selectedVideo.cover" placeholder="Kapak Görseli URL"><br>
-                    <label>Fragman Videosu: <input type="file" @change="handleEditTrailerUpload"></label><br>
-                    <input type="text" v-model="selectedVideo.trailer" placeholder="Fragman URL"><br>
-                    <label>Uzun Video: <input type="file" @change="handleEditVideoUpload"></label><br>
-                    <input type="text" v-model="selectedVideo.video" placeholder="Uzun Video URL"><br>
-                    <button @click="updateVideo(selectedIndex)">Güncelle</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -162,18 +144,40 @@
             el: "#app",
             data: {
                 isAdminOpen: false,
-                isEditOpen: false,
-                selectedIndex: null,
-                selectedVideo: {},
-                newVideo: { title: "", cover: "", trailer: "", video: "" },
-                videos: JSON.parse(localStorage.getItem('videos')) || []
+                videos: [],
+                newVideo: { title: "", cover: "", trailer: "", video: "" }
             },
             methods: {
                 toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
-                openEditModal(video, index) { this.selectedVideo = { ...video }; this.selectedIndex = index; this.isEditOpen = true; },
-                closeEditModal() { this.isEditOpen = false; },
-                updateVideo(index) { this.videos[index] = { ...this.selectedVideo }; this.saveVideos(); this.closeEditModal(); },
-                saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); }
+                addVideo() {
+                    if (this.newVideo.title && (this.newVideo.cover || this.newVideo.video)) {
+                        this.videos.unshift({ ...this.newVideo });
+                        this.saveVideos();
+                        this.newVideo = { title: "", cover: "", trailer: "", video: "" };
+                    }
+                },
+                clearVideos() {
+                    this.videos = [];
+                    localStorage.removeItem('videos');
+                },
+                openModal(video, isTrailer) {
+                    alert(isTrailer ? "Fragman Açılıyor: " + video.trailer : "Video Açılıyor: " + video.video);
+                },
+                saveVideos() {
+                    localStorage.setItem('videos', JSON.stringify(this.videos));
+                },
+                handleCoverUpload(event) {
+                    const file = event.target.files[0];
+                    if (file) this.newVideo.cover = URL.createObjectURL(file);
+                },
+                handleTrailerUpload(event) {
+                    const file = event.target.files[0];
+                    if (file) this.newVideo.trailer = URL.createObjectURL(file);
+                },
+                handleVideoUpload(event) {
+                    const file = event.target.files[0];
+                    if (file) this.newVideo.video = URL.createObjectURL(file);
+                }
             }
         });
     </script>
