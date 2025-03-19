@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Yönetim Paneli</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; text-align: center; position: relative; }
         .admin-btn {
@@ -81,6 +80,7 @@
             padding: 20px;
             width: 50%;
             text-align: center;
+            position: relative;
         }
         .edit-modal {
             display: flex;
@@ -115,45 +115,38 @@
         <h2>Hayalini İzle</h2>
         
         <div class="video-container">
-            <div v-for="(video, index) in videos" :key="index" class="video-card">
-                <img :src="video.cover" @click="openModal(video, true)">
+            <div class="video-card">
+                <img src="https://images.psmcdn.net/teamskeet/fuf/amber_summer_chloe_foxxe/shared/med.jpg" @click="openEditModal">
                 <div class="preview-container">
-                    <button class="preview-button" @click="openModal(video, true)">Fragman</button>
-                    <button class="preview-button" @click="openModal(video, false)">Video</button>
+                    <button class="preview-button" @click="openModal(true)">Fragman</button>
+                    <button class="preview-button" @click="openModal(false)">Video</button>
                 </div>
-                <div class="video-title">{{ video.title }}</div>
+                <div class="video-title">FREE USE FANTASY</div>
             </div>
         </div>
 
-        <div v-if="selectedVideo" class="modal" @click.self="closeModal">
+        <div v-if="isModalOpen" class="modal" @click.self="closeModal">
             <div class="modal-content">
                 <span class="close" @click="closeModal">&times;</span>
-                <h3>{{ selectedVideo.title }}</h3>
+                <h3>FREE USE FANTASY</h3>
                 <video controls autoplay style="width: 100%;">
-                    <source :src="isTrailer ? selectedVideo.trailer : selectedVideo.video" type="video/mp4">
+                    <source :src="isTrailer ? trailerURL : videoURL" type="video/mp4">
                 </video>
                 <br>
-                <button @click="isTrailer = true">Fragman</button>
-                <button @click="isTrailer = false">Video</button>
+                <button @click="changeVideo(true)">Fragman</button>
+                <button @click="changeVideo(false)">Video</button>
             </div>
         </div>
 
-        <div v-if="isEditOpen" class="modal" @click.self="closeEditModal">
-            <div class="edit-modal">
-                <div class="edit-left">
-                    <img :src="selectedVideo.cover">
-                </div>
-                <div class="edit-right">
-                    <h3>Videoyu Düzenle</h3>
-                    <label>Başlık: <input type="text" v-model="selectedVideo.title"></label><br>
-                    <label>Kapak Görseli: <input type="file" @change="handleEditCoverUpload"></label><br>
-                    <input type="text" v-model="selectedVideo.cover" placeholder="Kapak Görseli URL"><br>
-                    <label>Fragman Videosu: <input type="file" @change="handleEditTrailerUpload"></label><br>
-                    <input type="text" v-model="selectedVideo.trailer" placeholder="Fragman URL"><br>
-                    <label>Uzun Video: <input type="file" @change="handleEditVideoUpload"></label><br>
-                    <input type="text" v-model="selectedVideo.video" placeholder="Uzun Video URL"><br>
-                    <button @click="updateVideo(selectedIndex)">Güncelle</button>
-                </div>
+        <div v-if="isAdminOpen" class="modal" @click.self="toggleAdmin">
+            <div class="modal-content">
+                <span class="close" @click="toggleAdmin">&times;</span>
+                <h3>Yönetici Paneli</h3>
+                <label>Başlık: <input type="text" v-model="videoTitle"></label><br>
+                <label>Kapak Görseli: <input type="file"></label><br>
+                <label>Fragman Videosu: <input type="file"></label><br>
+                <label>Uzun Video: <input type="file"></label><br>
+                <button>Kaydet</button>
             </div>
         </div>
     </div>
@@ -162,32 +155,27 @@
         new Vue({
             el: "#app",
             data: {
+                isModalOpen: false,
                 isAdminOpen: false,
-                isEditOpen: false,
-                videos: JSON.parse(localStorage.getItem('videos')) || [],
-                selectedVideo: null,
-                selectedIndex: null,
-                isTrailer: true
+                isTrailer: true,
+                videoTitle: "FREE USE FANTASY",
+                trailerURL: "https://images.psmcdn.net/fuf/tour/pics/amber_summer_chloe_foxxe/bio_small.mp4",
+                videoURL: "https://fs30.bigwarp.io/v/04/00278/qeu8tyij2va2_x/x.mp4?t=LsMdfz5LiljiN_0j9wOi5FPdjz5u39uW0ln6I2SA7e8&s=1742385559&e=43200&f=1391792&sp=1000&i=0.0"
             },
             methods: {
-                toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
-                openModal(video, isTrailer) {
-                    this.selectedVideo = video;
+                openModal(isTrailer) {
+                    this.isModalOpen = true;
                     this.isTrailer = isTrailer;
                 },
-                closeModal() { this.selectedVideo = null; },
-                openEditModal(video, index) {
-                    this.selectedVideo = { ...video };
-                    this.selectedIndex = index;
-                    this.isEditOpen = true;
+                closeModal() {
+                    this.isModalOpen = false;
                 },
-                closeEditModal() { this.isEditOpen = false; },
-                updateVideo(index) {
-                    this.videos[index] = { ...this.selectedVideo };
-                    this.saveVideos();
-                    this.closeEditModal();
+                changeVideo(isTrailer) {
+                    this.isTrailer = isTrailer;
                 },
-                saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); }
+                toggleAdmin() {
+                    this.isAdminOpen = !this.isAdminOpen;
+                }
             }
         });
     </script>
