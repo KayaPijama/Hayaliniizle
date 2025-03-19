@@ -119,17 +119,13 @@
             <div class="modal-content">
                 <span class="close" @click="closeModal">&times;</span>
                 <h3>{{ selectedVideo.title }}</h3>
-                <video v-if="isTrailer" controls autoplay style="width: 100%;">
-                    <source :src="selectedVideo.trailer" type="video/mp4">
-                    Tarayıcınız video etiketini desteklemiyor.
-                </video>
-                <video v-else controls autoplay style="width: 100%;">
-                    <source :src="selectedVideo.video" type="video/mp4">
+                <video ref="videoPlayer" controls autoplay style="width: 100%;">
+                    <source :src="isTrailer ? selectedVideo.trailer : selectedVideo.video" type="video/mp4">
                     Tarayıcınız video etiketini desteklemiyor.
                 </video>
                 <br>
-                <button @click="isTrailer = true">Fragman</button>
-                <button @click="isTrailer = false">Tam Video</button>
+                <button @click="changeVideo(true)">Fragman</button>
+                <button @click="changeVideo(false)">Tam Video</button>
             </div>
         </div>
     </div>
@@ -162,9 +158,18 @@
                 openModal(video, trailer) {
                     this.selectedVideo = video;
                     this.isTrailer = trailer;
+                    this.$nextTick(() => {
+                        this.$refs.videoPlayer.load();
+                    });
                 },
                 closeModal() {
                     this.selectedVideo = null;
+                },
+                changeVideo(trailer) {
+                    this.isTrailer = trailer;
+                    this.$nextTick(() => {
+                        this.$refs.videoPlayer.load();
+                    });
                 },
                 saveVideos() {
                     localStorage.setItem('videos', JSON.stringify(this.videos));
