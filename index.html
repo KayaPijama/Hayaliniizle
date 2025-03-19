@@ -156,5 +156,26 @@
             </div>
         </div>
     </div>
+
+    <script>
+        new Vue({
+            el: "#app",
+            data: {
+                isAdminOpen: false,
+                isEditOpen: false,
+                selectedIndex: null,
+                selectedVideo: {},
+                newVideo: { title: "", cover: "", trailer: "", video: "" },
+                videos: JSON.parse(localStorage.getItem('videos')) || []
+            },
+            methods: {
+                toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
+                openEditModal(video, index) { this.selectedVideo = { ...video }; this.selectedIndex = index; this.isEditOpen = true; },
+                closeEditModal() { this.isEditOpen = false; },
+                updateVideo(index) { this.videos[index] = { ...this.selectedVideo }; this.saveVideos(); this.closeEditModal(); },
+                saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); }
+            }
+        });
+    </script>
 </body>
 </html>
