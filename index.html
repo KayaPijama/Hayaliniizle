@@ -70,6 +70,12 @@
             font-size: 20px;
             cursor: pointer;
         }
+        .video-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -80,6 +86,10 @@
         <div class="video-container">
             <div v-for="(video, index) in videos" :key="index" class="video-card">
                 <img :src="video.cover">
+                <div class="preview-container">
+                    <button class="preview-button" @click="openModal(video, true)">Fragman</button>
+                    <button class="preview-button" @click="openModal(video, false)">Video</button>
+                </div>
             </div>
         </div>
 
@@ -92,9 +102,19 @@
                     <h3>Yeni Video Ekle</h3>
                     <form @submit.prevent="addVideo">
                         <label>Başlık: <input type="text" v-model="newVideo.title"></label><br>
-                        <label>Kapak Görseli: <input type="file" @change="handleCoverUpload"></label><br>
-                        <label>Fragman Videosu: <input type="file" @change="handleTrailerUpload"></label><br>
-                        <label>Uzun Video: <input type="file" @change="handleVideoUpload"></label><br>
+                        
+                        <label>Kapak Görseli:</label>
+                        <input type="file" @change="handleCoverUpload"><br>
+                        <input type="text" v-model="newVideo.cover" placeholder="Kapak Görseli URL"><br>
+                        
+                        <label>Fragman Videosu:</label>
+                        <input type="file" @change="handleTrailerUpload"><br>
+                        <input type="text" v-model="newVideo.trailer" placeholder="Fragman URL"><br>
+                        
+                        <label>Uzun Video:</label>
+                        <input type="file" @change="handleVideoUpload"><br>
+                        <input type="text" v-model="newVideo.video" placeholder="Uzun Video URL"><br>
+                        
                         <button type="submit">Videoyu Ekle</button>
                     </form>
                 </div>
@@ -102,12 +122,37 @@
                 <!-- Sağ Taraf: Video Listeleme ve Düzenleme -->
                 <div class="modal-right">
                     <h3>Videoları Düzenle</h3>
-                    <div v-for="(video, index) in videos" :key="index" class="video-card">
-                        <img :src="video.cover">
-                        <input type="text" v-model="video.title" placeholder="Başlık">
-                        <button @click="updateVideo(index)">Güncelle</button>
-                        <button @click="removeVideo(index)" style="background-color: red; color: white;">Sil</button>
+                    <div v-for="(video, index) in videos" :key="index" class="video-card" @click="openEditModal(video, index)">
+                        <img :src="video.cover" class="video-preview">
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Düzenleme Pop-Up -->
+        <div v-if="isEditOpen" class="modal" @click.self="closeEditModal">
+            <div class="modal-content">
+                <span class="close" @click="closeEditModal">&times;</span>
+                <div class="modal-left">
+                    <img :src="selectedVideo.cover" class="video-preview">
+                </div>
+                <div class="modal-right">
+                    <h3>Videoyu Düzenle</h3>
+                    <label>Başlık: <input type="text" v-model="selectedVideo.title"></label><br>
+                    
+                    <label>Kapak Görseli:</label>
+                    <input type="file" @change="handleEditCoverUpload"><br>
+                    <input type="text" v-model="selectedVideo.cover" placeholder="Kapak Görseli URL"><br>
+                    
+                    <label>Fragman Videosu:</label>
+                    <input type="file" @change="handleEditTrailerUpload"><br>
+                    <input type="text" v-model="selectedVideo.trailer" placeholder="Fragman URL"><br>
+                    
+                    <label>Uzun Video:</label>
+                    <input type="file" @change="handleEditVideoUpload"><br>
+                    <input type="text" v-model="selectedVideo.video" placeholder="Uzun Video URL"><br>
+                    
+                    <button @click="updateVideo(selectedIndex)">Güncelle</button>
                 </div>
             </div>
         </div>
@@ -118,6 +163,9 @@
             el: "#app",
             data: {
                 isAdminOpen: false,
+                isEditOpen: false,
+                selectedIndex: null,
+                selectedVideo: {},
                 newVideo: { title: "", cover: "", trailer: "", video: "" },
                 videos: JSON.parse(localStorage.getItem('videos')) || []
             },
@@ -125,37 +173,18 @@
                 toggleAdmin() {
                     this.isAdminOpen = !this.isAdminOpen;
                 },
-                addVideo() {
-                    if (this.newVideo.title && this.newVideo.video) {
-                        this.videos.unshift({ ...this.newVideo }); // En başa ekle
-                        this.saveVideos();
-                        this.newVideo = { title: "", cover: "", trailer: "", video: "" };
-                    }
+                openEditModal(video, index) {
+                    this.selectedVideo = { ...video };
+                    this.selectedIndex = index;
+                    this.isEditOpen = true;
+                },
+                closeEditModal() {
+                    this.isEditOpen = false;
                 },
                 updateVideo(index) {
+                    this.videos[index] = { ...this.selectedVideo };
                     this.saveVideos();
-                },
-                removeVideo(index) {
-                    this.videos.splice(index, 1);
-                    this.saveVideos();
-                },
-                handleCoverUpload(event) {
-                    const file = event.target.files[0];
-                    if (file) {
-                        this.newVideo.cover = URL.createObjectURL(file);
-                    }
-                },
-                handleTrailerUpload(event) {
-                    const file = event.target.files[0];
-                    if (file) {
-                        this.newVideo.trailer = URL.createObjectURL(file);
-                    }
-                },
-                handleVideoUpload(event) {
-                    const file = event.target.files[0];
-                    if (file) {
-                        this.newVideo.video = URL.createObjectURL(file);
-                    }
+                    this.closeEditModal();
                 },
                 saveVideos() {
                     localStorage.setItem('videos', JSON.stringify(this.videos));
