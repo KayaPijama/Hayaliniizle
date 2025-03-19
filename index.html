@@ -7,10 +7,15 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
+        body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
         .video-card { 
             border: 1px solid #ccc; 
-            margin: 10px; 
             display: inline-block; 
             position: relative; 
             width: 250px;
@@ -35,7 +40,7 @@
         .preview-container {
             display: flex;
             justify-content: space-between;
-            width: 100%;
+            width: 250px;
             margin-top: 5px;
         }
         .preview-button {
@@ -99,7 +104,7 @@
         </div>
 
         <h3>Videolar</h3>
-        <div v-for="(video, index) in videos" :key="index">
+        <div v-for="(video, index) in videos" :key="index" class="video-container">
             <div class="video-card">
                 <img :src="video.cover">
                 <div class="video-title">{{ video.title }}</div>
