@@ -21,7 +21,7 @@
         .video-container {
             display: flex;
             flex-direction: row;
-            justify-content: flex-end; /* Videolar sağdan başlar */
+            justify-content: flex-start; /* Videolar soldan başlar */
             flex-wrap: wrap;
             margin-top: 20px;
         }
@@ -71,15 +71,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
         }
-        .modal-content {
+        .modal-content, .admin-modal, .upload-modal, .edit-modal {
             background: white;
             padding: 20px;
-            width: 50%;
-            text-align: center;
-            position: relative;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
         }
+        .modal-content { width: 50%; text-align: center; position: relative; }
         .admin-modal {
             width: 60%;
             display: flex;
@@ -126,12 +126,22 @@
             display: flex;
             align-items: center;
             margin: 10px 0;
+            width: 100%;
         }
         .edit-item img {
-            width: 80px;
-            height: 50px;
+            width: 60px;
+            height: 40px;
             object-fit: cover;
-            margin-right: 10px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .edit-item span {
+            flex-grow: 1;
+            font-size: 14px;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .edit-item button {
             margin-left: 10px;
@@ -140,6 +150,7 @@
             color: white;
             border: none;
             cursor: pointer;
+            flex-shrink: 0;
         }
         .close {
             position: absolute;
@@ -216,7 +227,7 @@
                     <h3>Videolar</h3>
                     <div class="edit-list">
                         <div v-for="(video, index) in videos" :key="index" class="edit-item">
-                            <img :src="video.cover">
+                            <img :src="video.cover" alt="Kapak">
                             <span>{{ video.title }}</span>
                             <button @click="openVideoEditModal(video, index)">Düzenle</button>
                         </div>
@@ -267,7 +278,7 @@
                 handleVideoUpload(event) { this.newVideo.video = URL.createObjectURL(event.target.files[0]); },
                 addVideo() {
                     if (this.newVideo.title && this.newVideo.cover && this.newVideo.video) {
-                        this.videos.unshift({ ...this.newVideo }); // En yeni video sola eklenir
+                        this.videos.unshift({ ...this.newVideo }); // Yeni video sola eklenir
                         this.saveVideos();
                         this.newVideo = { channel: "", title: "", cover: "", trailer: "", video: "" };
                         this.closeUploadModal();
