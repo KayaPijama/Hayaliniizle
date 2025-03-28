@@ -6,7 +6,7 @@
     <title>Hayalini İzle</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f4; padding: 20px; position: relative; }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; position: relative; }
         .admin-btn {
             position: absolute;
             top: 10px;
@@ -20,40 +20,37 @@
         }
         .video-container {
             display: flex;
-            flex-direction: row-reverse;
+            flex-direction: row;
+            justify-content: flex-end; /* Videolar sağdan başlar */
             flex-wrap: wrap;
             margin-top: 20px;
         }
         .video-card {
-            border: 1px solid #ccc;
             width: 250px;
             margin: 10px;
-            overflow: hidden;
-            cursor: pointer;
-            text-align: center;
             background: white;
-            padding-bottom: 10px;
+            text-align: center;
         }
         .video-card img {
             width: 100%;
             height: 150px;
             object-fit: cover;
+            margin-bottom: 0;
         }
         .preview-container {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            margin-top: 0;
+            margin: 0;
         }
         .preview-button {
             flex: 1;
-            text-align: center;
-            font-size: 14px;
-            font-weight: bold;
             padding: 8px;
-            cursor: pointer;
             border: none;
             color: white;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0;
         }
         .preview-button:first-child { background: red; }
         .preview-button:last-child { background: blue; }
@@ -61,10 +58,9 @@
             width: 100%;
             padding: 5px;
             font-size: 14px;
-            font-weight: bold;
             background: black;
             color: white;
-            margin-top: 0;
+            margin: 0;
         }
         .modal {
             display: flex;
@@ -84,23 +80,66 @@
             text-align: center;
             position: relative;
         }
-        .edit-modal {
-            display: flex;
+        .admin-modal {
             width: 60%;
-            height: 80%;
-            background: white;
-            padding: 20px;
+            display: flex;
             justify-content: space-between;
+            padding: 20px;
         }
-        .edit-left, .edit-right {
-            width: 48%;
+        .admin-left, .admin-right {
+            width: 45%;
+            text-align: center;
+        }
+        .admin-left h2, .admin-right h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .admin-button {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .upload-modal, .edit-modal {
+            width: 60%;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        .upload-left, .edit-left {
+            width: 40%;
+        }
+        .upload-right, .edit-right {
+            width: 55%;
             text-align: left;
         }
-        .edit-left img {
-            width: 100%;
-            height: auto;
-            max-height: 250px;
+        .upload-right label, .edit-right label {
+            display: block;
+            margin: 10px 0;
+        }
+        .edit-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .edit-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .edit-item img {
+            width: 80px;
+            height: 50px;
             object-fit: cover;
+            margin-right: 10px;
+        }
+        .edit-item button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
         }
         .close {
             position: absolute;
@@ -118,72 +157,133 @@
         
         <div class="video-container">
             <div v-for="(video, index) in videos" :key="index" class="video-card">
-                <img :src="video.cover" @click="openEditModal(video, index)">
+                <img :src="video.cover" alt="Kapak Görseli">
                 <div class="preview-container">
-                    <button class="preview-button" @click="openModal(video, true)">Fragman</button>
-                    <button class="preview-button" @click="openModal(video, false)">Video</button>
+                    <button class="preview-button" @click="openVideoModal(video, true)">Fragman</button>
+                    <button class="preview-button" @click="openVideoModal(video, false)">Video</button>
                 </div>
                 <div class="video-title">{{ video.title }}</div>
             </div>
         </div>
 
-        <div v-if="isAdminOpen" class="modal" @click.self="toggleAdmin">
+        <!-- Video Oynatma Modal -->
+        <div v-if="isVideoModalOpen" class="modal" @click.self="closeVideoModal">
             <div class="modal-content">
-                <span class="close" @click="toggleAdmin">&times;</span>
-                <h3>Yönetici Paneli</h3>
+                <span class="close" @click="closeVideoModal">×</span>
+                <h3>{{ selectedVideo.title }}</h3>
+                <video controls :src="isTrailer ? selectedVideo.trailer : selectedVideo.video" style="width: 100%; max-height: 400px;"></video>
+            </div>
+        </div>
 
-                <h4>Yeni Video Ekle</h4>
-                <label>Kanal: <input type="text" v-model="newVideo.channel"></label><br>
-                <label>Başlık: <input type="text" v-model="newVideo.title"></label><br>
-                <label>Kapak Görseli: <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label><br>
-                <label>Fragman Videosu: <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label><br>
-                <label>Uzun Video: <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label><br>
-                <button @click="addVideo">Ekle</button>
-
-                <h4>Videoları Düzenle</h4>
-                <div v-for="(video, index) in videos" :key="index">
-                    <img :src="video.cover" width="100">
-                    <button @click="openEditModal(video, index)">Düzenle</button>
+        <!-- Yönetici Paneli Modal -->
+        <div v-if="isAdminOpen" class="modal" @click.self="toggleAdmin">
+            <div class="admin-modal">
+                <span class="close" @click="toggleAdmin">×</span>
+                <div class="admin-left">
+                    <h2>Yükleme</h2>
+                    <button class="admin-button" @click="openUploadModal">Yükleme</button>
+                </div>
+                <div class="admin-right">
+                    <h2>Düzenleme</h2>
+                    <button class="admin-button" @click="openEditModal">Düzenleme</button>
                 </div>
             </div>
         </div>
 
+        <!-- Yükleme Modal -->
+        <div v-if="isUploadOpen" class="modal" @click.self="closeUploadModal">
+            <div class="upload-modal">
+                <span class="close" @click="closeUploadModal">×</span>
+                <div class="upload-left">
+                    <h3>Yeni Video Yükle</h3>
+                </div>
+                <div class="upload-right">
+                    <label>Kanal: <input type="text" v-model="newVideo.channel"></label>
+                    <label>Başlık: <input type="text" v-model="newVideo.title"></label>
+                    <label>Kapak Görseli: <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label>
+                    <label>Fragman: <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label>
+                    <label>Video: <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label>
+                    <button @click="addVideo">Ekle</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Düzenleme Modal -->
+        <div v-if="isEditOpen" class="modal" @click.self="closeEditModal">
+            <div class="edit-modal">
+                <span class="close" @click="closeEditModal">×</span>
+                <div class="edit-left">
+                    <h3>Videolar</h3>
+                    <div class="edit-list">
+                        <div v-for="(video, index) in videos" :key="index" class="edit-item">
+                            <img :src="video.cover">
+                            <span>{{ video.title }}</span>
+                            <button @click="openVideoEditModal(video, index)">Düzenle</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="edit-right" v-if="editVideo">
+                    <h3>{{ editVideo.title }} Düzenle</h3>
+                    <label>Kanal: <input type="text" v-model="editVideo.channel"></label>
+                    <label>Başlık: <input type="text" v-model="editVideo.title"></label>
+                    <label>Kapak Görseli: <input type="file" @change="updateCoverUpload"> veya <input type="text" v-model="editVideo.cover"></label>
+                    <label>Fragman: <input type="file" @change="updateTrailerUpload"> veya <input type="text" v-model="editVideo.trailer"></label>
+                    <label>Video: <input type="file" @change="updateVideoUpload"> veya <input type="text" v-model="editVideo.video"></label>
+                    <button @click="saveEdit">Kaydet</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         new Vue({
             el: "#app",
             data: {
-                isAdminOpen: false,
-                isModalOpen: false,
-                isTrailer: true,
                 videos: JSON.parse(localStorage.getItem('videos')) || [],
+                isAdminOpen: false,
+                isVideoModalOpen: false,
+                isUploadOpen: false,
+                isEditOpen: false,
+                isTrailer: true,
                 selectedVideo: null,
-                newVideo: { channel: "", title: "", cover: "", trailer: "", video: "" }
+                newVideo: { channel: "", title: "", cover: "", trailer: "", video: "" },
+                editVideo: null,
+                editIndex: -1
             },
             methods: {
                 toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
-                openModal(video, isTrailer) {
+                openVideoModal(video, isTrailer) {
                     this.selectedVideo = video;
                     this.isTrailer = isTrailer;
-                    this.isModalOpen = true;
+                    this.isVideoModalOpen = true;
                 },
-                closeModal() { this.isModalOpen = false; },
-                handleCoverUpload(event) {
-                    this.newVideo.cover = URL.createObjectURL(event.target.files[0]);
-                },
-                handleTrailerUpload(event) {
-                    this.newVideo.trailer = URL.createObjectURL(event.target.files[0]);
-                },
-                handleVideoUpload(event) {
-                    this.newVideo.video = URL.createObjectURL(event.target.files[0]);
-                },
+                closeVideoModal() { this.isVideoModalOpen = false; },
+                openUploadModal() { this.isUploadOpen = true; },
+                closeUploadModal() { this.isUploadOpen = false; },
+                openEditModal() { this.isEditOpen = true; },
+                closeEditModal() { this.isEditOpen = false; },
+                handleCoverUpload(event) { this.newVideo.cover = URL.createObjectURL(event.target.files[0]); },
+                handleTrailerUpload(event) { this.newVideo.trailer = URL.createObjectURL(event.target.files[0]); },
+                handleVideoUpload(event) { this.newVideo.video = URL.createObjectURL(event.target.files[0]); },
                 addVideo() {
                     if (this.newVideo.title && this.newVideo.cover && this.newVideo.video) {
-                        this.videos.unshift({ ...this.newVideo });
+                        this.videos.unshift({ ...this.newVideo }); // En yeni video sola eklenir
                         this.saveVideos();
                         this.newVideo = { channel: "", title: "", cover: "", trailer: "", video: "" };
+                        this.closeUploadModal();
                     }
+                },
+                openVideoEditModal(video, index) {
+                    this.editVideo = { ...video };
+                    this.editIndex = index;
+                },
+                updateCoverUpload(event) { this.editVideo.cover = URL.createObjectURL(event.target.files[0]); },
+                updateTrailerUpload(event) { this.editVideo.trailer = URL.createObjectURL(event.target.files[0]); },
+                updateVideoUpload(event) { this.editVideo.video = URL.createObjectURL(event.target.files[0]); },
+                saveEdit() {
+                    this.$set(this.videos, this.editIndex, { ...this.editVideo });
+                    this.saveVideos();
+                    this.editVideo = null;
                 },
                 saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); }
             }
