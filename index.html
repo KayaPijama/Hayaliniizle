@@ -6,7 +6,14 @@
     <title>Hayalini İzle</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; position: relative; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            padding: 20px;
+            position: relative;
+            margin: 0;
+        }
         .admin-btn {
             position: absolute;
             top: 10px;
@@ -18,17 +25,39 @@
             cursor: pointer;
             font-size: 16px;
         }
+        h2 {
+            text-align: center;
+            margin: 0 0 20px 0;
+        }
+        .channel-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        .channel-card {
+            width: 200px;
+            text-align: center;
+            background: #2c2c2c;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .channel-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
         .video-container {
             display: flex;
             flex-direction: row;
-            justify-content: flex-start; /* Videolar soldan başlar */
+            justify-content: flex-start;
             flex-wrap: wrap;
             margin-top: 20px;
         }
         .video-card {
             width: 250px;
             margin: 10px;
-            background: white;
+            background: #2c2c2c;
             text-align: center;
         }
         .video-card img {
@@ -36,6 +65,7 @@
             height: 150px;
             object-fit: cover;
             margin-bottom: 0;
+            cursor: pointer;
         }
         .preview-container {
             display: flex;
@@ -52,13 +82,13 @@
             font-size: 14px;
             margin: 0;
         }
-        .preview-button:first-child { background: red; }
-        .preview-button:last-child { background: blue; }
+        .preview-button:first-child { background: #ff4444; }
+        .preview-button:last-child { background: #4444ff; }
         .video-title {
             width: 100%;
             padding: 5px;
             font-size: 14px;
-            background: black;
+            background: #000000;
             color: white;
             margin: 0;
         }
@@ -74,83 +104,77 @@
             background: rgba(0, 0, 0, 0.8);
         }
         .modal-content, .admin-modal, .upload-modal, .edit-modal {
-            background: white;
+            background: #2c2c2c;
+            color: #ffffff;
             padding: 20px;
             border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            width: 70%;
         }
-        .modal-content { width: 50%; text-align: center; position: relative; }
-        .admin-modal {
-            width: 60%;
+        .switch-buttons {
+            margin-top: 10px;
             display: flex;
-            justify-content: space-between;
-            padding: 20px;
+            justify-content: center;
+            gap: 10px;
         }
-        .admin-left, .admin-right {
-            width: 45%;
-            text-align: center;
+        .switch-button {
+            padding: 8px 15px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            background: #007BFF;
         }
-        .admin-left h2, .admin-right h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
         }
-        .admin-button {
-            padding: 10px 20px;
+        .gallery img {
+            width: 100px;
+            height: 60px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .gallery-controls {
+            margin-top: 5px;
+            display: flex;
+            gap: 5px;
+        }
+        .gallery-controls button {
+            padding: 5px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .channel-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .channel-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .channel-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        .channel-item button {
+            margin-left: 10px;
+            padding: 5px;
             background: #28a745;
             color: white;
             border: none;
             cursor: pointer;
         }
-        .upload-modal, .edit-modal {
-            width: 60%;
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
-        }
-        .upload-left, .edit-left {
-            width: 40%;
-        }
-        .upload-right, .edit-right {
-            width: 55%;
-            text-align: left;
-        }
-        .upload-right label, .edit-right label {
-            display: block;
-            margin: 10px 0;
-        }
-        .edit-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .edit-item {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            width: 100%;
-        }
-        .edit-item img {
-            width: 60px;
-            height: 40px;
-            object-fit: cover;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-        .edit-item span {
-            flex-grow: 1;
-            font-size: 14px;
-            text-align: left;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .edit-item button {
-            margin-left: 10px;
-            padding: 5px 10px;
-            background: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            flex-shrink: 0;
+        .edit-item button.delete {
+            background: #ff4444;
         }
         .close {
             position: absolute;
@@ -158,6 +182,7 @@
             right: 15px;
             font-size: 20px;
             cursor: pointer;
+            color: #ffffff;
         }
     </style>
 </head>
@@ -165,16 +190,24 @@
     <div id="app">
         <button class="admin-btn" @click="toggleAdmin">Yönetici Paneli</button>
         <h2>Hayalini İzle</h2>
-        
-        <div class="video-container">
-            <div v-for="(video, index) in videos" :key="index" class="video-card">
-                <img :src="video.cover" alt="Kapak Görseli">
+
+        <div v-if="!selectedChannel" class="channel-container">
+            <div v-for="(channel, index) in channels" :key="index" class="channel-card" @click="selectChannel(channel)">
+                <img :src="channel.cover" alt="Kanal Kapak">
+                <div>{{ channel.name }}</div>
+            </div>
+        </div>
+
+        <div v-if="selectedChannel" class="video-container">
+            <div v-for="(video, index) in filteredVideos" :key="index" class="video-card">
+                <img :src="video.cover" alt="Kapak Görseli" @click="openGalleryModal(video)">
                 <div class="preview-container">
                     <button class="preview-button" @click="openVideoModal(video, true)">Fragman</button>
                     <button class="preview-button" @click="openVideoModal(video, false)">Video</button>
                 </div>
                 <div class="video-title">{{ video.title }}</div>
             </div>
+            <button @click="backToChannels" style="margin-top: 20px; padding: 10px; background: #007BFF; color: white; border: none;">Kanallara Geri Dön</button>
         </div>
 
         <!-- Video Oynatma Modal -->
@@ -183,6 +216,27 @@
                 <span class="close" @click="closeVideoModal">×</span>
                 <h3>{{ selectedVideo.title }}</h3>
                 <video controls :src="isTrailer ? selectedVideo.trailer : selectedVideo.video" style="width: 100%; max-height: 400px;"></video>
+                <div class="switch-buttons">
+                    <button class="switch-button" v-if="isTrailer" @click="switchToVideo">Video</button>
+                    <button class="switch-button" v-if="!isTrailer" @click="switchToTrailer">Fragman</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Galeri Modal -->
+        <div v-if="isGalleryModalOpen" class="modal" @click.self="closeGalleryModal">
+            <div class="modal-content">
+                <span class="close" @click="closeGalleryModal">×</span>
+                <h3>{{ selectedVideo.title }}</h3>
+                <video controls :src="selectedVideo.trailer" style="width: 100%; max-height: 400px;"></video>
+                <div class="gallery">
+                    <div v-for="(img, idx) in selectedVideo.gallery" :key="idx" v-if="img">
+                        <img :src="img" alt="Galeri Resmi">
+                        <div class="gallery-controls">
+                            <button @click="removeGalleryImage(selectedVideo, idx)">Sil</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -193,6 +247,18 @@
                 <div class="admin-left">
                     <h2>Yükleme</h2>
                     <button class="admin-button" @click="openUploadModal">Yükleme</button>
+                    <h3>Kanal Oluştur</h3>
+                    <label>Kanal Adı: <input type="text" v-model="newChannel.name"></label>
+                    <label>Kapak Görseli: <input type="file" @change="handleChannelCoverUpload"> veya <input type="text" v-model="newChannel.cover"></label>
+                    <button @click="addChannel">Ekle</button>
+                    <div class="channel-list">
+                        <div v-for="(channel, index) in channels" :key="index" class="channel-item">
+                            <img :src="channel.cover" alt="Kanal Kapak">
+                            <span>{{ channel.name }}</span>
+                            <button @click="editChannel(index)">Düzenle</button>
+                            <button @click="deleteChannel(index)">Sil</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="admin-right">
                     <h2>Düzenleme</h2>
@@ -207,13 +273,21 @@
                 <span class="close" @click="closeUploadModal">×</span>
                 <div class="upload-left">
                     <h3>Yeni Video Yükle</h3>
+                    <div class="channel-list">
+                        <div v-for="(channel, index) in channels" :key="index" class="channel-item">
+                            <img :src="channel.cover" alt="Kanal Kapak">
+                            <span>{{ channel.name }}</span>
+                            <button @click="assignChannel(channel)">+</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="upload-right">
-                    <label>Kanal: <input type="text" v-model="newVideo.channel"></label>
+                    <label>Kanal: <input type="text" v-model="newVideo.channel" readonly></label>
                     <label>Başlık: <input type="text" v-model="newVideo.title"></label>
                     <label>Kapak Görseli: <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label>
                     <label>Fragman: <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label>
                     <label>Video: <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label>
+                    <label v-for="n in 10" :key="n">Galeri Resmi {{ n }}: <input type="file" @change="handleGalleryUpload($event, n-1)"> veya <input type="text" v-model="newVideo.gallery[n-1]"></label>
                     <button @click="addVideo">Ekle</button>
                 </div>
             </div>
@@ -230,16 +304,25 @@
                             <img :src="video.cover" alt="Kapak">
                             <span>{{ video.title }}</span>
                             <button @click="openVideoEditModal(video, index)">Düzenle</button>
+                            <button class="delete" @click="deleteVideo(index)">Sil</button>
                         </div>
                     </div>
                 </div>
                 <div class="edit-right" v-if="editVideo">
                     <h3>{{ editVideo.title }} Düzenle</h3>
-                    <label>Kanal: <input type="text" v-model="editVideo.channel"></label>
+                    <div class="channel-list">
+                        <div v-for="(channel, index) in channels" :key="index" class="channel-item">
+                            <img :src="channel.cover" alt="Kanal Kapak">
+                            <span>{{ channel.name }}</span>
+                            <button @click="assignEditChannel(channel)">+</button>
+                        </div>
+                    </div>
+                    <label>Kanal: <input type="text" v-model="editVideo.channel" readonly></label>
                     <label>Başlık: <input type="text" v-model="editVideo.title"></label>
                     <label>Kapak Görseli: <input type="file" @change="updateCoverUpload"> veya <input type="text" v-model="editVideo.cover"></label>
                     <label>Fragman: <input type="file" @change="updateTrailerUpload"> veya <input type="text" v-model="editVideo.trailer"></label>
                     <label>Video: <input type="file" @change="updateVideoUpload"> veya <input type="text" v-model="editVideo.video"></label>
+                    <label v-for="n in 10" :key="n">Galeri Resmi {{ n }}: <input type="file" @change="updateGalleryUpload($event, n-1)"> veya <input type="text" v-model="editVideo.gallery[n-1]"></label>
                     <button @click="saveEdit">Kaydet</button>
                 </div>
             </div>
@@ -251,24 +334,47 @@
             el: "#app",
             data: {
                 videos: JSON.parse(localStorage.getItem('videos')) || [],
+                channels: JSON.parse(localStorage.getItem('channels')) || [],
+                selectedChannel: null,
                 isAdminOpen: false,
                 isVideoModalOpen: false,
+                isGalleryModalOpen: false,
                 isUploadOpen: false,
                 isEditOpen: false,
                 isTrailer: true,
                 selectedVideo: null,
-                newVideo: { channel: "", title: "", cover: "", trailer: "", video: "" },
+                newVideo: { channel: "", title: "", cover: "", trailer: "", video: "", gallery: Array(10).fill("") },
+                newChannel: { name: "", cover: "" },
                 editVideo: null,
                 editIndex: -1
             },
+            computed: {
+                filteredVideos() {
+                    if (!this.selectedChannel) return [];
+                    return this.videos.filter(video => video.channel === this.selectedChannel.name);
+                }
+            },
             methods: {
                 toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
+                selectChannel(channel) { this.selectedChannel = channel; },
+                backToChannels() { this.selectedChannel = null; },
                 openVideoModal(video, isTrailer) {
                     this.selectedVideo = video;
                     this.isTrailer = isTrailer;
                     this.isVideoModalOpen = true;
                 },
                 closeVideoModal() { this.isVideoModalOpen = false; },
+                switchToVideo() { this.isTrailer = false; },
+                switchToTrailer() { this.isTrailer = true; },
+                openGalleryModal(video) {
+                    this.selectedVideo = video;
+                    this.isGalleryModalOpen = true;
+                },
+                closeGalleryModal() { this.isGalleryModalOpen = false; },
+                removeGalleryImage(video, index) {
+                    video.gallery[index] = "";
+                    this.saveVideos();
+                },
                 openUploadModal() { this.isUploadOpen = true; },
                 closeUploadModal() { this.isUploadOpen = false; },
                 openEditModal() { this.isEditOpen = true; },
@@ -276,27 +382,55 @@
                 handleCoverUpload(event) { this.newVideo.cover = URL.createObjectURL(event.target.files[0]); },
                 handleTrailerUpload(event) { this.newVideo.trailer = URL.createObjectURL(event.target.files[0]); },
                 handleVideoUpload(event) { this.newVideo.video = URL.createObjectURL(event.target.files[0]); },
+                handleGalleryUpload(event, index) { this.newVideo.gallery[index] = URL.createObjectURL(event.target.files[0]); },
+                handleChannelCoverUpload(event) { this.newChannel.cover = URL.createObjectURL(event.target.files[0]); },
                 addVideo() {
-                    if (this.newVideo.title && this.newVideo.cover && this.newVideo.video) {
-                        this.videos.unshift({ ...this.newVideo }); // Yeni video sola eklenir
+                    if (this.newVideo.title && this.newVideo.cover && this.newVideo.video && this.newVideo.channel) {
+                        this.videos.unshift({ ...this.newVideo, gallery: [...this.newVideo.gallery] });
                         this.saveVideos();
-                        this.newVideo = { channel: "", title: "", cover: "", trailer: "", video: "" };
+                        this.newVideo = { channel: "", title: "", cover: "", trailer: "", video: "", gallery: Array(10).fill("") };
                         this.closeUploadModal();
                     }
                 },
+                addChannel() {
+                    if (this.newChannel.name && this.newChannel.cover) {
+                        this.channels.push({ ...this.newChannel });
+                        this.saveChannels();
+                        this.newChannel = { name: "", cover: "" };
+                    }
+                },
+                editChannel(index) {
+                    this.newChannel = { ...this.channels[index] };
+                    this.channels.splice(index, 1);
+                    this.saveChannels();
+                },
+                deleteChannel(index) {
+                    this.channels.splice(index, 1);
+                    this.videos = this.videos.filter(video => video.channel !== this.channels[index]?.name);
+                    this.saveChannels();
+                    this.saveVideos();
+                },
+                assignChannel(channel) { this.newVideo.channel = channel.name; },
+                assignEditChannel(channel) { this.editVideo.channel = channel.name; },
                 openVideoEditModal(video, index) {
-                    this.editVideo = { ...video };
+                    this.editVideo = { ...video, gallery: video.gallery ? [...video.gallery] : Array(10).fill("") };
                     this.editIndex = index;
                 },
                 updateCoverUpload(event) { this.editVideo.cover = URL.createObjectURL(event.target.files[0]); },
                 updateTrailerUpload(event) { this.editVideo.trailer = URL.createObjectURL(event.target.files[0]); },
                 updateVideoUpload(event) { this.editVideo.video = URL.createObjectURL(event.target.files[0]); },
+                updateGalleryUpload(event, index) { this.editVideo.gallery[index] = URL.createObjectURL(event.target.files[0]); },
                 saveEdit() {
-                    this.$set(this.videos, this.editIndex, { ...this.editVideo });
+                    this.$set(this.videos, this.editIndex, { ...this.editVideo, gallery: [...this.editVideo.gallery] });
                     this.saveVideos();
                     this.editVideo = null;
                 },
-                saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); }
+                deleteVideo(index) {
+                    this.videos.splice(index, 1);
+                    this.saveVideos();
+                },
+                saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); },
+                saveChannels() { localStorage.setItem('channels', JSON.stringify(this.channels)); }
             }
         });
     </script>
