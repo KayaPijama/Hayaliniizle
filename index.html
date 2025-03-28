@@ -170,6 +170,42 @@
             padding: 10px;
             margin-top: 10px;
         }
+        .gallery-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        .gallery-item label {
+            flex-grow: 1;
+        }
+        .gallery-controls {
+            display: flex;
+            gap: 5px;
+            margin-left: 10px;
+        }
+        .gallery-controls button {
+            padding: 5px;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .gallery-controls .delete-btn {
+            background: #ff4444;
+        }
+        .gallery-controls .move-up-btn {
+            background: #007BFF;
+        }
+        .gallery-controls .move-down-btn {
+            background: #007BFF;
+        }
+        .add-gallery-btn {
+            padding: 5px 10px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
         .channel-list {
             max-height: 250px;
             overflow-y: auto;
@@ -404,9 +440,15 @@
                     <label><span>Fragman:</span> <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label>
                     <label><span>Video:</span> <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label>
                     <div class="gallery-section">
-                        <div v-for="n in 10" :key="n">
-                            <label><span>Galeri Resmi {{ n }}:</span> <input type="file" @change="handleGalleryUpload($event, n-1)"> veya <input type="text" v-model="newVideo.gallery[n-1]"></label>
+                        <div v-for="(img, index) in newVideo.gallery" :key="index" class="gallery-item">
+                            <label><span>Galeri Resmi {{ index + 1 }}:</span> <input type="file" accept="image/*" @change="handleGalleryUpload($event, index)"> veya <input type="text" v-model="newVideo.gallery[index]" placeholder="Resim veya GIF URL"></label>
+                            <div class="gallery-controls">
+                                <button class="delete-btn" @click="deleteGalleryField(index)">Sil</button>
+                                <button class="move-up-btn" @click="moveGalleryUp(index, 'newVideo')" :disabled="index === 0">↑</button>
+                                <button class="move-down-btn" @click="moveGalleryDown(index, 'newVideo')" :disabled="index === newVideo.gallery.length - 1">↓</button>
+                            </div>
                         </div>
+                        <button class="add-gallery-btn" @click="addGalleryField">+</button>
                     </div>
                     <button @click="addVideo" class="admin-button">Ekle</button>
                 </div>
@@ -443,9 +485,15 @@
                     <label><span>Fragman:</span> <input type="file" @change="updateTrailerUpload"> veya <input type="text" v-model="editVideo.trailer"></label>
                     <label><span>Video:</span> <input type="file" @change="updateVideoUpload"> veya <input type="text" v-model="editVideo.video"></label>
                     <div class="gallery-section">
-                        <div v-for="n in 10" :key="n">
-                            <label><span>Galeri Resmi {{ n }}:</span> <input type="file" @change="updateGalleryUpload($event, n-1)"> veya <input type="text" v-model="editVideo.gallery[n-1]"></label>
+                        <div v-for="(img, index) in editVideo.gallery" :key="index" class="gallery-item">
+                            <label><span>Galeri Resmi {{ index + 1 }}:</span> <input type="file" accept="image/*" @change="updateGalleryUpload($event, index)"> veya <input type="text" v-model="editVideo.gallery[index]" placeholder="Resim veya GIF URL"></label>
+                            <div class="gallery-controls">
+                                <button class="delete-btn" @click="deleteEditGalleryField(index)">Sil</button>
+                                <button class="move-up-btn" @click="moveGalleryUp(index, 'editVideo')" :disabled="index === 0">↑</button>
+                                <button class="move-down-btn" @click="moveGalleryDown(index, 'editVideo')" :disabled="index === editVideo.gallery.length - 1">↓</button>
+                            </div>
                         </div>
+                        <button class="add-gallery-btn" @click="addEditGalleryField">+</button>
                     </div>
                     <button @click="saveEdit" class="admin-button">Kaydet</button>
                 </div>
@@ -470,7 +518,7 @@
                 selectedVideo: null,
                 selectedImage: null,
                 currentImageIndex: 0,
-                newVideo: { channel: "", title: "", cover: "", trailer: "", video: "", gallery: Array(10).fill("") },
+                newVideo: { channel: "", title: "", cover: "", trailer: "", video: "", gallery: [] },
                 newChannel: { name: "", cover: "" },
                 editVideo: null,
                 editIndex: -1
@@ -532,13 +580,31 @@
                 handleCoverUpload(event) { this.newVideo.cover = URL.createObjectURL(event.target.files[0]); },
                 handleTrailerUpload(event) { this.newVideo.trailer = URL.createObjectURL(event.target.files[0]); },
                 handleVideoUpload(event) { this.newVideo.video = URL.createObjectURL(event.target.files[0]); },
-                handleGalleryUpload(event, index) { this.newVideo.gallery[index] = URL.createObjectURL(event.target.files[0]); },
+                handleGalleryUpload(event, index) { this.$set(this.newVideo.gallery, index, URL.createObjectURL(event.target.files[0])); },
                 handleChannelCoverUpload(event) { this.newChannel.cover = URL.createObjectURL(event.target.files[0]); },
+                addGalleryField() { this.newVideo.gallery.push(""); },
+                addEditGalleryField() { this.editVideo.gallery.push(""); },
+                deleteGalleryField(index) { this.newVideo.gallery.splice(index, 1); },
+                deleteEditGalleryField(index) { this.editVideo.gallery.splice(index, 1); },
+                moveGalleryUp(index, target) {
+                    if (index > 0) {
+                        const gallery = this[target].gallery;
+                        [gallery[index], gallery[index - 1]] = [gallery[index - 1], gallery[index]];
+                        this.$set(this[target], 'gallery', [...gallery]);
+                    }
+                },
+                moveGalleryDown(index, target) {
+                    if (index < this[target].gallery.length - 1) {
+                        const gallery = this[target].gallery;
+                        [gallery[index], gallery[index + 1]] = [gallery[index + 1], gallery[index]];
+                        this.$set(this[target], 'gallery', [...gallery]);
+                    }
+                },
                 addVideo() {
                     if (this.newVideo.title && this.newVideo.cover && this.newVideo.video && this.newVideo.channel) {
                         this.videos.unshift({ ...this.newVideo, gallery: [...this.newVideo.gallery] });
                         this.saveVideos();
-                        this.newVideo = { channel: "", title: "", cover: "", trailer: "", video: "", gallery: Array(10).fill("") };
+                        this.newVideo = { channel: "", title: "", cover: "", trailer: "", video: "", gallery: [] };
                         this.closeUploadModal();
                     }
                 },
@@ -563,13 +629,13 @@
                 assignChannel(channel) { this.newVideo.channel = channel.name; },
                 assignEditChannel(channel) { this.editVideo.channel = channel.name; },
                 openVideoEditModal(video, index) {
-                    this.editVideo = { ...video, gallery: video.gallery ? [...video.gallery] : Array(10).fill("") };
+                    this.editVideo = { ...video, gallery: video.gallery ? [...video.gallery] : [] };
                     this.editIndex = index;
                 },
                 updateCoverUpload(event) { this.editVideo.cover = URL.createObjectURL(event.target.files[0]); },
                 updateTrailerUpload(event) { this.editVideo.trailer = URL.createObjectURL(event.target.files[0]); },
                 updateVideoUpload(event) { this.editVideo.video = URL.createObjectURL(event.target.files[0]); },
-                updateGalleryUpload(event, index) { this.editVideo.gallery[index] = URL.createObjectURL(event.target.files[0]); },
+                updateGalleryUpload(event, index) { this.$set(this.editVideo.gallery, index, URL.createObjectURL(event.target.files[0])); },
                 saveEdit() {
                     this.$set(this.videos, this.editIndex, { ...this.editVideo, gallery: [...this.editVideo.gallery] });
                     this.saveVideos();
