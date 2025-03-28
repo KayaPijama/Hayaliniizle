@@ -109,7 +109,86 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            width: 70%;
+            width: 80%;
+            max-width: 900px; /* Maksimum genişlik sınırlaması */
+        }
+        .admin-modal {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .admin-section {
+            width: 48%;
+            text-align: center;
+        }
+        .admin-section h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .admin-button {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .channel-create, .upload-left, .edit-left {
+            width: 40%;
+            padding-right: 20px;
+        }
+        .upload-right, .edit-right {
+            width: 60%;
+            text-align: left;
+        }
+        .upload-right label, .edit-right label {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .upload-right label span, .edit-right label span {
+            width: 120px; /* Sabit etiket genişliği */
+            flex-shrink: 0;
+        }
+        .upload-right input, .edit-right input {
+            flex-grow: 1;
+            background: #3c3c3c;
+            color: #ffffff;
+            border: 1px solid #555;
+            padding: 5px;
+        }
+        .channel-list {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border: 1px solid #555;
+            padding: 10px;
+        }
+        .channel-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        .channel-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        .channel-item span {
+            flex-grow: 1;
+        }
+        .channel-item button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .edit-item button.delete, .channel-item button.delete {
+            background: #ff4444;
         }
         .switch-buttons {
             margin-top: 10px;
@@ -149,32 +228,39 @@
             border: none;
             cursor: pointer;
         }
-        .channel-list {
-            max-height: 200px;
+        .edit-list {
+            max-height: 300px;
             overflow-y: auto;
-            margin-top: 10px;
+            border: 1px solid #555;
+            padding: 10px;
         }
-        .channel-item {
+        .edit-item {
             display: flex;
             align-items: center;
-            margin: 10px 0;
+            margin: 8px 0;
         }
-        .channel-item img {
-            width: 40px;
+        .edit-item img {
+            width: 60px;
             height: 40px;
             object-fit: cover;
-            margin-right: 10px;
+            margin-right: 15px;
+            flex-shrink: 0;
         }
-        .channel-item button {
+        .edit-item span {
+            flex-grow: 1;
+            font-size: 14px;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .edit-item button {
             margin-left: 10px;
-            padding: 5px;
-            background: #28a745;
+            padding: 5px 10px;
+            background: #007BFF;
             color: white;
             border: none;
             cursor: pointer;
-        }
-        .edit-item button.delete {
-            background: #ff4444;
         }
         .close {
             position: absolute;
@@ -244,25 +330,27 @@
         <div v-if="isAdminOpen" class="modal" @click.self="toggleAdmin">
             <div class="admin-modal">
                 <span class="close" @click="toggleAdmin">×</span>
-                <div class="admin-left">
+                <div class="admin-section">
                     <h2>Yükleme</h2>
-                    <button class="admin-button" @click="openUploadModal">Yükleme</button>
-                    <h3>Kanal Oluştur</h3>
-                    <label>Kanal Adı: <input type="text" v-model="newChannel.name"></label>
-                    <label>Kapak Görseli: <input type="file" @change="handleChannelCoverUpload"> veya <input type="text" v-model="newChannel.cover"></label>
-                    <button @click="addChannel">Ekle</button>
-                    <div class="channel-list">
-                        <div v-for="(channel, index) in channels" :key="index" class="channel-item">
-                            <img :src="channel.cover" alt="Kanal Kapak">
-                            <span>{{ channel.name }}</span>
-                            <button @click="editChannel(index)">Düzenle</button>
-                            <button @click="deleteChannel(index)">Sil</button>
+                    <button class="admin-button" @click="openUploadModal">Video Yükle</button>
+                    <div class="channel-create">
+                        <h3>Kanal Oluştur</h3>
+                        <label><span>Kanal Adı:</span> <input type="text" v-model="newChannel.name"></label>
+                        <label><span>Kapak Görseli:</span> <input type="file" @change="handleChannelCoverUpload"> veya <input type="text" v-model="newChannel.cover"></label>
+                        <button @click="addChannel" class="admin-button">Kanal Ekle</button>
+                        <div class="channel-list">
+                            <div v-for="(channel, index) in channels" :key="index" class="channel-item">
+                                <img :src="channel.cover" alt="Kanal Kapak">
+                                <span>{{ channel.name }}</span>
+                                <button @click="editChannel(index)">Düzenle</button>
+                                <button class="delete" @click="deleteChannel(index)">Sil</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="admin-right">
+                <div class="admin-section">
                     <h2>Düzenleme</h2>
-                    <button class="admin-button" @click="openEditModal">Düzenleme</button>
+                    <button class="admin-button" @click="openEditModal">Videoları Düzenle</button>
                 </div>
             </div>
         </div>
@@ -272,7 +360,7 @@
             <div class="upload-modal">
                 <span class="close" @click="closeUploadModal">×</span>
                 <div class="upload-left">
-                    <h3>Yeni Video Yükle</h3>
+                    <h3>Kanal Seçimi</h3>
                     <div class="channel-list">
                         <div v-for="(channel, index) in channels" :key="index" class="channel-item">
                             <img :src="channel.cover" alt="Kanal Kapak">
@@ -282,13 +370,16 @@
                     </div>
                 </div>
                 <div class="upload-right">
-                    <label>Kanal: <input type="text" v-model="newVideo.channel" readonly></label>
-                    <label>Başlık: <input type="text" v-model="newVideo.title"></label>
-                    <label>Kapak Görseli: <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label>
-                    <label>Fragman: <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label>
-                    <label>Video: <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label>
-                    <label v-for="n in 10" :key="n">Galeri Resmi {{ n }}: <input type="file" @change="handleGalleryUpload($event, n-1)"> veya <input type="text" v-model="newVideo.gallery[n-1]"></label>
-                    <button @click="addVideo">Ekle</button>
+                    <h3>Yeni Video Yükle</h3>
+                    <label><span>Kanal:</span> <input type="text" v-model="newVideo.channel" readonly></label>
+                    <label><span>Başlık:</span> <input type="text" v-model="newVideo.title"></label>
+                    <label><span>Kapak Görseli:</span> <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label>
+                    <label><span>Fragman:</span> <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label>
+                    <label><span>Video:</span> <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label>
+                    <div v-for="n in 10" :key="n">
+                        <label><span>Galeri Resmi {{ n }}:</span> <input type="file" @change="handleGalleryUpload($event, n-1)"> veya <input type="text" v-model="newVideo.gallery[n-1]"></label>
+                    </div>
+                    <button @click="addVideo" class="admin-button">Ekle</button>
                 </div>
             </div>
         </div>
@@ -317,13 +408,15 @@
                             <button @click="assignEditChannel(channel)">+</button>
                         </div>
                     </div>
-                    <label>Kanal: <input type="text" v-model="editVideo.channel" readonly></label>
-                    <label>Başlık: <input type="text" v-model="editVideo.title"></label>
-                    <label>Kapak Görseli: <input type="file" @change="updateCoverUpload"> veya <input type="text" v-model="editVideo.cover"></label>
-                    <label>Fragman: <input type="file" @change="updateTrailerUpload"> veya <input type="text" v-model="editVideo.trailer"></label>
-                    <label>Video: <input type="file" @change="updateVideoUpload"> veya <input type="text" v-model="editVideo.video"></label>
-                    <label v-for="n in 10" :key="n">Galeri Resmi {{ n }}: <input type="file" @change="updateGalleryUpload($event, n-1)"> veya <input type="text" v-model="editVideo.gallery[n-1]"></label>
-                    <button @click="saveEdit">Kaydet</button>
+                    <label><span>Kanal:</span> <input type="text" v-model="editVideo.channel" readonly></label>
+                    <label><span>Başlık:</span> <input type="text" v-model="editVideo.title"></label>
+                    <label><span>Kapak Görseli:</span> <input type="file" @change="updateCoverUpload"> veya <input type="text" v-model="editVideo.cover"></label>
+                    <label><span>Fragman:</span> <input type="file" @change="updateTrailerUpload"> veya <input type="text" v-model="editVideo.trailer"></label>
+                    <label><span>Video:</span> <input type="file" @change="updateVideoUpload"> veya <input type="text" v-model="editVideo.video"></label>
+                    <div v-for="n in 10" :key="n">
+                        <label><span>Galeri Resmi {{ n }}:</span> <input type="file" @change="updateGalleryUpload($event, n-1)"> veya <input type="text" v-model="editVideo.gallery[n-1]"></label>
+                    </div>
+                    <button @click="saveEdit" class="admin-button">Kaydet</button>
                 </div>
             </div>
         </div>
