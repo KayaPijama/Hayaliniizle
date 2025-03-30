@@ -27,28 +27,6 @@
             cursor: pointer;
             font-size: 16px;
         }
-        .search-bar-container {
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-        }
-        .search-bar {
-            padding: 5px;
-            background: #3c3c3c;
-            color: #ffffff;
-            border: 1px solid #555;
-            width: 200px;
-        }
-        .search-btn {
-            padding: 5px 10px;
-            background: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            margin-left: 5px;
-        }
         h2 {
             text-align: center;
             margin: 20px 0;
@@ -77,18 +55,6 @@
             justify-content: flex-start;
             flex-wrap: wrap;
             margin-top: 20px;
-        }
-        .video-search-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .video-search {
-            padding: 5px;
-            background: #3c3c3c;
-            color: #ffffff;
-            border: 1px solid #555;
-            width: 200px;
         }
         .video-card {
             width: 250px;
@@ -379,38 +345,6 @@
             cursor: pointer;
             color: #ffffff;
         }
-        .search-page .channels {
-            display: flex;
-            flex-wrap: wrap;
-        }
-        .search-page .channel {
-            margin: 0;
-        }
-        .search-page .channel img {
-            width: 150px;
-            height: 100px;
-            object-fit: cover;
-        }
-        .search-page .channel-name {
-            background: #2c2c2c;
-            padding: 5px;
-            text-align: center;
-        }
-        .search-page .videos {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 0;
-        }
-        .search-page .video img {
-            width: 100%;
-            height: 100px;
-            object-fit: cover;
-        }
-        .search-page .video-title {
-            background: #000000;
-            padding: 5px;
-            text-align: center;
-        }
         .video-page {
             display: flex;
             height: 100vh;
@@ -453,14 +387,10 @@
 </head>
 <body>
     <div id="app">
-        <div class="search-bar-container" v-if="!isSearchPage && !isVideoPage">
-            <input type="text" class="search-bar" v-model="searchQuery" placeholder="Ara (ör. oyuncu ismi)">
-            <button class="search-btn" @click="searchContent">Ara</button>
-        </div>
         <button class="admin-btn" @click="toggleAdmin">Yönetici Paneli</button>
 
         <!-- Ana Sayfa -->
-        <div v-if="!isSearchPage && !isVideoPage">
+        <div v-if="!isVideoPage">
             <h2>Hayalini İzle</h2>
             <div v-if="!selectedChannel" class="channel-container">
                 <div v-for="(channel, index) in channels" :key="index" class="channel-card" @click="selectChannel(channel)">
@@ -469,10 +399,6 @@
                 </div>
             </div>
             <div v-if="selectedChannel" class="video-container">
-                <div class="video-search-container">
-                    <input type="text" class="video-search" v-model="searchVideoQuery" placeholder="Video ara...">
-                    <button class="search-btn" @click="searchVideoQuery = searchVideoQuery">Ara</button>
-                </div>
                 <div v-for="(video, index) in filteredVideos" :key="index" class="video-card">
                     <img :src="video.cover" alt="Kapak Görseli" @click="openGalleryModal(video)">
                     <div class="preview-container">
@@ -482,24 +408,6 @@
                     <div class="video-title">{{ video.title }}</div>
                 </div>
                 <button @click="backToChannels" style="margin-top: 20px; padding: 10px; background: #007BFF; color: white; border: none;">Kanallara Geri Dön</button>
-            </div>
-        </div>
-
-        <!-- Arama Sayfası -->
-        <div v-if="isSearchPage" class="search-page">
-            <h2>Arama Sonuçları: "{{ searchQuery }}"</h2>
-            <button @click="backToMain" style="padding: 10px; background: #007BFF; color: white; border: none;">Geri</button>
-            <div class="channels">
-                <div v-for="(channel, cIndex) in filteredChannels" :key="cIndex" class="channel">
-                    <img :src="channel.cover" alt="Kanal Kapak">
-                    <div class="channel-name">{{ channel.name }}</div>
-                    <div class="videos">
-                        <div v-for="(video, vIndex) in channelVideos(channel)" :key="vIndex" class="video">
-                            <img :src="video.cover" alt="Video Kapak" @click="openVideoPage(video)">
-                            <div class="video-title">{{ video.title }}</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -519,7 +427,7 @@
                     <button class="switch-button" v-if="isTrailer" @click="switchToVideo">Video</button>
                     <button class="switch-button" v-if="!isTrailer" @click="switchToTrailer">Fragman</button>
                 </div>
-                <button @click="backToSearch" style="margin-top: 20px; padding: 10px; background: #007BFF; color: white; border: none;">Geri</button>
+                <button @click="backToChannels" style="margin-top: 20px; padding: 10px; background: #007BFF; color: white; border: none;">Geri</button>
             </div>
         </div>
 
@@ -541,9 +449,8 @@
             <div class="modal-content">
                 <span class="close" @click="closeGalleryModal">×</span>
                 <h3>{{ selectedVideo.title }} - Galeri</h3>
-                <input type="text" v-model="searchGalleryQuery" placeholder="Galeri ara...">
                 <div class="gallery">
-                    <img v-for="(item, idx) in filteredGallery" :key="idx" :src="item.url" alt="Galeri Resmi" @click="openImageModal(item.url, idx)">
+                    <img v-for="(item, idx) in selectedVideo.gallery" :key="idx" :src="item.url" alt="Galeri Resmi" @click="openImageModal(item.url, idx)">
                 </div>
             </div>
         </div>
@@ -608,7 +515,6 @@
                     <h3>Yeni Video Yükle</h3>
                     <label><span>Kanal:</span> <input type="text" v-model="newVideo.channel" readonly></label>
                     <label><span>Başlık:</span> <input type="text" v-model="newVideo.title"></label>
-                    <label><span>Etiketler:</span> <input type="text" v-model="newVideo.tags" placeholder="örn. aksiyon, macera"></label>
                     <label><span>Kapak Görseli:</span> <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label>
                     <label><span>Fragman:</span> <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label>
                     <label><span>Video:</span> <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label>
@@ -635,9 +541,8 @@
                 <span class="close" @click="closeEditModal">×</span>
                 <div class="edit-left">
                     <h3>Kanallar</h3>
-                    <input type="text" v-model="searchChannelQuery" placeholder="Kanal ara...">
                     <div class="channel-list">
-                        <div v-for="(channel, index) in filteredChannels" :key="index" class="channel-item" @click="selectEditChannel(channel)">
+                        <div v-for="(channel, index) in channels" :key="index" class="channel-item" @click="selectEditChannel(channel)">
                             <img :src="channel.cover" alt="Kanal Kapak">
                             <span>{{ channel.name }}</span>
                         </div>
@@ -645,7 +550,6 @@
                 </div>
                 <div class="edit-right" v-if="selectedEditChannel">
                     <h3>{{ selectedEditChannel.name }} - Videolar</h3>
-                    <input type="text" v-model="searchVideoQuery" placeholder="Video ara...">
                     <div class="edit-list">
                         <div v-for="(video, index) in filteredEditVideos" :key="index" class="edit-item">
                             <img :src="video.cover" alt="Kapak">
@@ -659,7 +563,6 @@
                     <h3>{{ editVideo.title }} Düzenle</h3>
                     <label><span>Kanal:</span> <input type="text" v-model="editVideo.channel" readonly></label>
                     <label><span>Başlık:</span> <input type="text" v-model="editVideo.title"></label>
-                    <label><span>Etiketler:</span> <input type="text" v-model="editVideo.tags" placeholder="örn. aksiyon, macera"></label>
                     <label><span>Kapak Görseli:</span> <input type="file" @change="updateCoverUpload"> veya <input type="text" v-model="editVideo.cover"></label>
                     <label><span>Fragman:</span> <input type="file" @change="updateTrailerUpload"> veya <input type="text" v-model="editVideo.trailer"></label>
                     <label><span>Video:</span> <input type="file" @change="updateVideoUpload"> veya <input type="text" v-model="editVideo.video"></label>
@@ -713,17 +616,12 @@
                 isEditOpen: false,
                 isImageModalOpen: false,
                 isEditImageModalOpen: false,
-                isSearchPage: false,
                 isVideoPage: false,
                 isTrailer: true,
                 selectedVideo: null,
                 selectedImage: null,
                 currentImageIndex: 0,
-                searchQuery: "",
-                searchVideoQuery: "",
-                searchGalleryQuery: "",
-                searchChannelQuery: "",
-                newVideo: { channel: "", title: "", tags: "", cover: "", trailer: "", video: "", gallery: [] },
+                newVideo: { channel: "", title: "", cover: "", trailer: "", video: "", gallery: [] },
                 newChannel: { name: "", cover: "" },
                 editVideo: null,
                 editIndex: -1,
@@ -737,41 +635,11 @@
             computed: {
                 filteredVideos() {
                     if (!this.selectedChannel) return [];
-                    let videos = this.videos.filter(video => video.channel === this.selectedChannel.name);
-                    if (this.searchVideoQuery) {
-                        return videos.filter(video => video.title.toLowerCase().includes(this.searchVideoQuery.toLowerCase()));
-                    }
-                    return videos;
-                },
-                filteredGallery() {
-                    if (!this.searchGalleryQuery) return this.selectedVideo.gallery;
-                    return this.selectedVideo.gallery.filter(item => 
-                        item.description.toLowerCase().includes(this.searchGalleryQuery.toLowerCase())
-                    );
-                },
-                filteredChannels() {
-                    if (this.isSearchPage) {
-                        return this.channels.filter(channel => 
-                            this.videos.some(video => 
-                                video.channel === channel.name && 
-                                video.tags.toLowerCase().includes(this.searchQuery.toLowerCase())
-                            )
-                        );
-                    }
-                    if (this.isEditOpen && this.searchChannelQuery) {
-                        return this.channels.filter(channel => 
-                            channel.name.toLowerCase().includes(this.searchChannelQuery.toLowerCase())
-                        );
-                    }
-                    return this.channels;
+                    return this.videos.filter(video => video.channel === this.selectedChannel.name);
                 },
                 filteredEditVideos() {
                     if (!this.selectedEditChannel) return [];
-                    let videos = this.videos.filter(video => video.channel === this.selectedEditChannel.name);
-                    if (this.searchVideoQuery) {
-                        return videos.filter(video => video.title.toLowerCase().includes(this.searchVideoQuery.toLowerCase()));
-                    }
-                    return videos;
+                    return this.videos.filter(video => video.channel === this.selectedEditChannel.name);
                 }
             },
             mounted() {
@@ -783,7 +651,10 @@
             methods: {
                 toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
                 selectChannel(channel) { this.selectedChannel = channel; },
-                backToChannels() { this.selectedChannel = null; },
+                backToChannels() { 
+                    this.selectedChannel = null; 
+                    this.isVideoPage = false; 
+                },
                 openVideoModal(video, isTrailer) {
                     this.selectedVideo = video;
                     this.isTrailer = isTrailer;
@@ -854,10 +725,9 @@
                 },
                 addVideo() {
                     if (this.newVideo.title && this.newVideo.cover && this.newVideo.video && this.newVideo.channel) {
-                        this.newVideo.tags = this.newVideo.tags ? this.newVideo.tags.split(',').map(tag => tag.trim()) : [];
                         this.videos.unshift({ ...this.newVideo, gallery: [...this.newVideo.gallery] });
                         this.saveVideos();
-                        this.newVideo = { channel: "", title: "", tags: "", cover: "", trailer: "", video: "", gallery: [] };
+                        this.newVideo = { channel: "", title: "", cover: "", trailer: "", video: "", gallery: [] };
                         this.closeUploadModal();
                     }
                 },
@@ -880,9 +750,12 @@
                     this.saveVideos();
                 },
                 assignChannel(channel) { this.newVideo.channel = channel.name; },
-                selectEditChannel(channel) { this.selectedEditChannel = channel; this.editVideo = null; },
+                selectEditChannel(channel) { 
+                    this.selectedEditChannel = channel; 
+                    this.editVideo = null; 
+                },
                 openVideoEditModal(video, index) {
-                    this.editVideo = { ...video, tags: video.tags.join(', '), gallery: video.gallery ? [...video.gallery] : [] };
+                    this.editVideo = { ...video, gallery: video.gallery ? [...video.gallery] : [] };
                     this.editIndex = index;
                 },
                 updateCoverUpload(event) { this.editVideo.cover = URL.createObjectURL(event.target.files[0]); },
@@ -890,7 +763,6 @@
                 updateVideoUpload(event) { this.editVideo.video = URL.createObjectURL(event.target.files[0]); },
                 updateGalleryUpload(event, index) { this.$set(this.editVideo.gallery, index, { url: URL.createObjectURL(event.target.files[0]), description: this.editVideo.gallery[index].description }); },
                 saveEdit() {
-                    this.editVideo.tags = this.editVideo.tags ? this.editVideo.tags.split(',').map(tag => tag.trim()) : [];
                     this.$set(this.videos, this.editIndex, { ...this.editVideo, gallery: [...this.editVideo.gallery] });
                     this.saveVideos();
                     this.editVideo = null;
@@ -946,27 +818,13 @@
                         });
                     }
                 },
-                searchContent() {
-                    if (this.searchQuery) this.isSearchPage = true;
-                },
-                backToMain() {
-                    this.isSearchPage = false;
-                    this.searchQuery = "";
-                },
-                channelVideos(channel) {
-                    return this.videos.filter(video => 
-                        video.channel === channel.name && 
-                        video.tags.some(tag => tag.toLowerCase().includes(this.searchQuery.toLowerCase()))
-                    );
-                },
                 openVideoPage(video) {
                     this.selectedVideo = video;
                     this.isVideoPage = true;
                     this.isTrailer = true;
                     this.currentImageIndex = 0;
                     this.selectedImage = video.gallery[0].url;
-                },
-                backToSearch() { this.isVideoPage = false; }
+                }
             }
         });
     </script>
