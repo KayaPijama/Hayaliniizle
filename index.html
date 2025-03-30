@@ -16,6 +16,22 @@
             position: relative;
             margin: 0;
         }
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        #loading-screen img {
+            width: 150px;
+            height: 150px;
+        }
         .admin-btn, .chatbot-btn {
             position: absolute;
             top: 10px;
@@ -467,13 +483,16 @@
     </style>
 </head>
 <body>
-    <div id="app">
+    <div id="loading-screen" style="display: block;">
+        <img src="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" alt="Yükleniyor...">
+    </div>
+    <div id="app" style="display: none;">
         <div class="search-bar-container" v-if="!isSearchPage && !isVideoPage">
             <input type="text" class="search-bar" v-model="searchQuery" placeholder="Ara (ör. oyuncu ismi)">
             <button class="search-btn" @click="searchContent">Ara</button>
         </div>
         <button class="admin-btn" @click="toggleAdmin">Yönetici Paneli</button>
-        <button id="chatbot-btn" class="chatbot-btn" @click="handleChatbotClick" @dblclick="openGifUploadModal" :style="{ backgroundImage: 'url(' + customChatbotGif + ')' }"></button>
+        <button id="chatbot-btn" class="chatbot-btn" @click="openChatbot" @dblclick="openGifUploadModal" :style="{ backgroundImage: 'url(' + customChatbotGif + ')' }"></button>
 
         <!-- Ana Sayfa -->
         <div v-if="!isSearchPage && !isVideoPage">
@@ -831,11 +850,24 @@
             },
             mounted() {
                 window.addEventListener('keydown', this.handleKeyPress);
+                this.isChatbotOpen = false;
+                this.isGifUploadOpen = false;
+                this.hideLoadingScreen();
             },
             beforeDestroy() {
                 window.removeEventListener('keydown', this.handleKeyPress);
             },
             methods: {
+                hideLoadingScreen() {
+                    const loadingScreen = document.getElementById('loading-screen');
+                    const app = document.getElementById('app');
+                    if (loadingScreen && app) {
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            app.style.display = 'block';
+                        }, 1000); // 1 saniye gecikme ile yükleme ekranı kapanır
+                    }
+                },
                 toggleAdmin() { this.isAdminOpen = !this.isAdminOpen; },
                 selectChannel(channel) { this.selectedChannel = channel; },
                 backToChannels() { this.selectedChannel = null; },
@@ -893,7 +925,7 @@
                 },
                 dragOver(event) {
                     event.preventDefault();
-                    event.target.closest('.gallery-item').classList.add('over');
+                    event.target.closest('.gallery-item')?.classList.add('over');
                 },
                 drop(event, index, target) {
                     event.preventDefault();
@@ -984,9 +1016,7 @@
                     this.previewImage = "";
                 },
                 rotateImage(degrees) {
-                    if (this.croppie) {
-                        this.croppie.rotate(degrees);
-                    }
+                    if (this.croppie) this.croppie.rotate(degrees);
                 },
                 updatePreview() {
                     if (this.croppie) {
@@ -1004,9 +1034,7 @@
                     }
                 },
                 searchContent() {
-                    if (this.searchQuery) {
-                        this.isSearchPage = true;
-                    }
+                    if (this.searchQuery) this.isSearchPage = true;
                 },
                 backToMain() {
                     this.isSearchPage = false;
@@ -1025,13 +1053,12 @@
                     this.currentImageIndex = 0;
                     this.selectedImage = video.gallery[0].url;
                 },
-                backToSearch() {
-                    this.isVideoPage = false;
-                },
-                handleChatbotClick(event) {
-                    if (!this.isChatbotOpen) {
-                        this.isChatbotOpen = true;
-                        this.chatbotMessages = [{ from: "bot", text: "Merhaba! Video yükleyebilirim, düzenleme yapabilirim ya da başka bir şey sorabilirsin. Ne yapalım?" }];
+                backToSearch() { this.isVideoPage = false; },
+                openChatbot(event) {
+                    event.preventDefault();
+                    this.isChatbotOpen = true;
+                    if (this.chatbotMessages.length === 0) {
+                        this.chatbotMessages.push({ from: "bot", text: "Merhaba! Video yükleyebilirim, düzenleme yapabilirim ya da başka bir şey sorabilirsin. Ne yapalım?" });
                     }
                 },
                 openGifUploadModal(event) {
