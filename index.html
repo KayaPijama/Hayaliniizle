@@ -780,7 +780,7 @@
                 chatbotState: "initial",
                 chatbotPreview: "",
                 gifUrl: "",
-                customChatbotGif: "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" // Varsayılan GIF
+                customChatbotGif: "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif"
             },
             computed: {
                 filteredVideos() {
@@ -1028,7 +1028,7 @@
                 backToSearch() {
                     this.isVideoPage = false;
                 },
-                handleChatbotClick() {
+                handleChatbotClick(event) {
                     if (!this.isChatbotOpen) {
                         this.isChatbotOpen = true;
                         this.chatbotMessages = [{ from: "bot", text: "Merhaba! Video yükleyebilirim, düzenleme yapabilirim ya da başka bir şey sorabilirsin. Ne yapalım?" }];
@@ -1036,6 +1036,7 @@
                 },
                 openGifUploadModal(event) {
                     event.preventDefault();
+                    event.stopPropagation();
                     this.isGifUploadOpen = true;
                 },
                 closeChatbot() {
@@ -1046,6 +1047,7 @@
                 },
                 closeGifUploadModal() {
                     this.isGifUploadOpen = false;
+                    this.gifUrl = "";
                 },
                 uploadChatbotGif(event) {
                     const file = event.target.files[0];
