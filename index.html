@@ -26,9 +26,9 @@
             cursor: pointer;
             font-size: 16px;
         }
-        .admin-btn { right: 80px; }
+        .admin-btn { right: 20px; }
         .chatbot-btn {
-            right: 20px;
+            left: 20px;
             width: 50px;
             height: 50px;
             background-size: cover;
@@ -36,14 +36,27 @@
             transition: transform 0.2s;
         }
         .chatbot-btn:hover { transform: scale(1.1); }
-        .search-bar {
+        .search-bar-container {
             position: absolute;
             top: 10px;
-            left: 20px;
+            left: 80px;
+            display: flex;
+            align-items: center;
+        }
+        .search-bar {
             padding: 5px;
             background: #3c3c3c;
             color: #ffffff;
             border: 1px solid #555;
+            width: 200px;
+        }
+        .search-btn {
+            padding: 5px 10px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 5px;
         }
         h2 {
             text-align: center;
@@ -73,6 +86,18 @@
             justify-content: flex-start;
             flex-wrap: wrap;
             margin-top: 20px;
+        }
+        .video-search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .video-search {
+            padding: 5px;
+            background: #3c3c3c;
+            color: #ffffff;
+            border: 1px solid #555;
+            width: 200px;
         }
         .video-card {
             width: 250px;
@@ -443,7 +468,10 @@
 </head>
 <body>
     <div id="app">
-        <input v-if="!isSearchPage && !isVideoPage" type="text" class="search-bar" v-model="searchQuery" placeholder="Ara (ör. oyuncu ismi)" @keyup.enter="searchContent">
+        <div class="search-bar-container" v-if="!isSearchPage && !isVideoPage">
+            <input type="text" class="search-bar" v-model="searchQuery" placeholder="Ara (ör. oyuncu ismi)">
+            <button class="search-btn" @click="searchContent">Ara</button>
+        </div>
         <button class="admin-btn" @click="toggleAdmin">Yönetici Paneli</button>
         <button id="chatbot-btn" class="chatbot-btn" @click="handleChatbotClick" @dblclick="openGifUploadModal" :style="{ backgroundImage: 'url(' + customChatbotGif + ')' }"></button>
 
@@ -457,7 +485,10 @@
                 </div>
             </div>
             <div v-if="selectedChannel" class="video-container">
-                <input type="text" v-model="searchVideoQuery" placeholder="Video ara...">
+                <div class="video-search-container">
+                    <input type="text" class="video-search" v-model="searchVideoQuery" placeholder="Video ara...">
+                    <button class="search-btn" @click="searchVideoQuery = searchVideoQuery">Ara</button>
+                </div>
                 <div v-for="(video, index) in filteredVideos" :key="index" class="video-card">
                     <img :src="video.cover" alt="Kapak Görseli" @click="openGalleryModal(video)">
                     <div class="preview-container">
@@ -593,7 +624,7 @@
                     <h3>Yeni Video Yükle</h3>
                     <label><span>Kanal:</span> <input type="text" v-model="newVideo.channel" readonly></label>
                     <label><span>Başlık:</span> <input type="text" v-model="newVideo.title"></label>
-                    <label><span>Etiketler:</span> <input type="text" v-model="newVideo.tags" placeholder="örn. Tom Hanks, aksiyon"></label>
+                    <label><span>Etiketler:</span> <input type="text" v-model="newVideo.tags" placeholder="örn. aksiyon, macera"></label>
                     <label><span>Kapak Görseli:</span> <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label>
                     <label><span>Fragman:</span> <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label>
                     <label><span>Video:</span> <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label>
@@ -635,8 +666,8 @@
                         <div v-for="(video, index) in filteredEditVideos" :key="index" class="edit-item">
                             <img :src="video.cover" alt="Kapak">
                             <span>{{ video.title }}</span>
-                            <button @click="openVideoEditModal(video, index)">Düzenle</button>
-                            <button class="delete" @click="deleteVideo(index)">Sil</button>
+                            <button @click="openVideoEditModal(video, videos.indexOf(video))">Düzenle</button>
+                            <button class="delete" @click="deleteVideo(videos.indexOf(video))">Sil</button>
                         </div>
                     </div>
                 </div>
@@ -644,7 +675,7 @@
                     <h3>{{ editVideo.title }} Düzenle</h3>
                     <label><span>Kanal:</span> <input type="text" v-model="editVideo.channel" readonly></label>
                     <label><span>Başlık:</span> <input type="text" v-model="editVideo.title"></label>
-                    <label><span>Etiketler:</span> <input type="text" v-model="editVideo.tags" placeholder="örn. Tom Hanks, aksiyon"></label>
+                    <label><span>Etiketler:</span> <input type="text" v-model="editVideo.tags" placeholder="örn. aksiyon, macera"></label>
                     <label><span>Kapak Görseli:</span> <input type="file" @change="updateCoverUpload"> veya <input type="text" v-model="editVideo.cover"></label>
                     <label><span>Fragman:</span> <input type="file" @change="updateTrailerUpload"> veya <input type="text" v-model="editVideo.trailer"></label>
                     <label><span>Video:</span> <input type="file" @change="updateVideoUpload"> veya <input type="text" v-model="editVideo.video"></label>
@@ -878,7 +909,7 @@
                 },
                 addVideo() {
                     if (this.newVideo.title && this.newVideo.cover && this.newVideo.video && this.newVideo.channel) {
-                        this.newVideo.tags = this.newVideo.tags.split(',').map(tag => tag.trim());
+                        this.newVideo.tags = this.newVideo.tags ? this.newVideo.tags.split(',').map(tag => tag.trim()) : [];
                         this.videos.unshift({ ...this.newVideo, gallery: [...this.newVideo.gallery] });
                         this.saveVideos();
                         this.newVideo = { channel: "", title: "", tags: "", cover: "", trailer: "", video: "", gallery: [] };
@@ -914,7 +945,7 @@
                 updateVideoUpload(event) { this.editVideo.video = URL.createObjectURL(event.target.files[0]); },
                 updateGalleryUpload(event, index) { this.$set(this.editVideo.gallery, index, { url: URL.createObjectURL(event.target.files[0]), description: this.editVideo.gallery[index].description }); },
                 saveEdit() {
-                    this.editVideo.tags = this.editVideo.tags.split(',').map(tag => tag.trim());
+                    this.editVideo.tags = this.editVideo.tags ? this.editVideo.tags.split(',').map(tag => tag.trim()) : [];
                     this.$set(this.videos, this.editIndex, { ...this.editVideo, gallery: [...this.editVideo.gallery] });
                     this.saveVideos();
                     this.editVideo = null;
@@ -1000,10 +1031,11 @@
                 handleChatbotClick() {
                     if (!this.isChatbotOpen) {
                         this.isChatbotOpen = true;
-                        this.chatbotMessages = [{ from: "bot", text: "Merhaba! Ne yapalım? (Yükleme, düzenleme vs.)" }];
+                        this.chatbotMessages = [{ from: "bot", text: "Merhaba! Video yükleyebilirim, düzenleme yapabilirim ya da başka bir şey sorabilirsin. Ne yapalım?" }];
                     }
                 },
-                openGifUploadModal() {
+                openGifUploadModal(event) {
+                    event.preventDefault();
                     this.isGifUploadOpen = true;
                 },
                 closeChatbot() {
@@ -1033,21 +1065,24 @@
                     this.chatbotMessages.push({ from: "user", text: this.chatbotInput });
                     
                     if (this.chatbotState === "initial") {
-                        if (this.chatbotInput.toLowerCase().includes("yükleme")) {
+                        if (this.chatbotInput.toLowerCase().includes("yükleme") || this.chatbotInput.toLowerCase().includes("yüklemek")) {
                             this.chatbotState = "upload";
-                            const suggestion = this.mostUsedChannel ? `En çok "${this.mostUsedChannel}" kanalını kullanmışsın, yine oraya mı ekleyelim?` : "";
-                            this.chatbotMessages.push({ from: "bot", text: `Tamam, başlayalım! Video kapak görseli URL’sini ver. ${suggestion}` });
+                            const suggestion = this.mostUsedChannel ? `(Öneri: En çok "${this.mostUsedChannel}" kanalını kullanmışsın, oraya mı ekleyelim?)` : "";
+                            this.chatbotMessages.push({ from: "bot", text: `Tamam, başlayalım! Önce video kapak görseli URL’sini ver. ${suggestion}` });
+                        } else if (this.chatbotInput.toLowerCase().includes("düzenle")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Hangi videoyu düzenleyelim? Bana video başlığını söyle." });
+                            this.chatbotState = "edit-select";
                         } else {
-                            this.chatbotMessages.push({ from: "bot", text: "Anlamadım, neyi kastediyorsun? Yükleme mi, başka bir şey mi?" });
+                            this.chatbotMessages.push({ from: "bot", text: "Anlamadım, neyi kastediyorsun? Video yüklemek mi, düzenlemek mi, başka bir şey mi?" });
                         }
                     } else if (this.chatbotState === "upload") {
                         if (this.isValidUrl(this.chatbotInput)) {
                             this.newVideo.cover = this.chatbotInput;
                             this.chatbotPreview = this.chatbotInput;
-                            this.chatbotMessages.push({ from: "bot", text: "Kapak görseli önizlemesi yukarıda. 'Tamam' deyip devam edelim mi?" });
+                            this.chatbotMessages.push({ from: "bot", text: "Kapak görseli önizlemesi yukarıda. Sorun yoksa 'Tamam' deyip devam edelim mi?" });
                             this.chatbotState = "confirm-cover";
                         } else {
-                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, başka bir tane dene!" });
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, lütfen çalışan bir resim URL’si ver (örn. .jpg, .png)!" });
                         }
                     } else if (this.chatbotState === "confirm-cover") {
                         if (this.chatbotInput.toLowerCase() === "tamam") {
@@ -1061,10 +1096,10 @@
                         if (this.isValidUrl(this.chatbotInput)) {
                             this.newVideo.video = this.chatbotInput;
                             this.chatbotPreview = this.chatbotInput;
-                            this.chatbotMessages.push({ from: "bot", text: "Video önizlemesi yukarıda. 'Tamam' deyip devam edelim mi?" });
+                            this.chatbotMessages.push({ from: "bot", text: "Video önizlemesi yukarıda. Sorun yoksa 'Tamam' deyip devam edelim mi?" });
                             this.chatbotState = "confirm-video";
                         } else {
-                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, başka bir tane dene!" });
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, lütfen çalışan bir video URL’si ver (örn. .mp4)!" });
                         }
                     } else if (this.chatbotState === "confirm-video") {
                         if (this.chatbotInput.toLowerCase() === "tamam") {
@@ -1080,7 +1115,7 @@
                         this.chatbotState = "channel";
                     } else if (this.chatbotState === "channel") {
                         this.newVideo.channel = this.chatbotInput;
-                        this.chatbotMessages.push({ from: "bot", text: "Kanal eklendi! Başka bir şey eklemek ister misin? (Fragman, etiketler vs.) Yoksa 'Bitir' deyip kaydedelim mi?" });
+                        this.chatbotMessages.push({ from: "bot", text: `Kanal "${this.chatbotInput}" olarak eklendi! Başka bir şey eklemek ister misin? Mesela fragman, etiketler, galeri resmi? Yoksa 'Bitir' deyip kaydedelim mi?` });
                         this.chatbotState = "extra";
                     } else if (this.chatbotState === "extra") {
                         if (this.chatbotInput.toLowerCase() === "bitir") {
@@ -1091,32 +1126,185 @@
                             this.chatbotMessages.push({ from: "bot", text: "Fragman URL’sini ver." });
                             this.chatbotState = "trailer";
                         } else if (this.chatbotInput.toLowerCase().includes("etiket")) {
-                            this.chatbotMessages.push({ from: "bot", text: "Etiketleri virgülle ayırarak yaz (örn. aksiyon, komedi)." });
+                            this.chatbotMessages.push({ from: "bot", text: "Tamam, etiketleri virgülle ayırarak yaz (örn. aksiyon, macera)." });
                             this.chatbotState = "tags";
+                        } else if (this.chatbotInput.toLowerCase().includes("galeri") || this.chatbotInput.toLowerCase().includes("resim")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Galeri için bir resim URL’si ver." });
+                            this.chatbotState = "gallery";
+                        } else if (this.chatbotInput.toLowerCase().includes("kanal")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Hangi kanala ekleyelim?" });
+                            this.chatbotState = "channel";
                         } else {
-                            this.chatbotMessages.push({ from: "bot", text: "Anlamadım, fragman mı, etiketler mi ekleyelim? Yoksa 'Bitir' deyip kaydedelim mi?" });
+                            this.chatbotMessages.push({ from: "bot", text: "Anlamadım, fragman mı, etiketler mi, galeri resmi mi ekleyelim? Yoksa 'Bitir' deyip kaydedelim mi?" });
                         }
                     } else if (this.chatbotState === "trailer") {
                         if (this.isValidUrl(this.chatbotInput)) {
                             this.newVideo.trailer = this.chatbotInput;
                             this.chatbotPreview = this.chatbotInput;
-                            this.chatbotMessages.push({ from: "bot", text: "Fragman önizlemesi yukarıda. 'Tamam' deyip devam edelim mi?" });
+                            this.chatbotMessages.push({ from: "bot", text: "Fragman önizlemesi yukarıda. Sorun yoksa 'Tamam' deyip devam edelim mi?" });
                             this.chatbotState = "confirm-trailer";
                         } else {
-                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, başka bir tane dene!" });
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, lütfen çalışan bir video URL’si ver (örn. .mp4)!" });
                         }
                     } else if (this.chatbotState === "confirm-trailer") {
                         if (this.chatbotInput.toLowerCase() === "tamam") {
                             this.chatbotPreview = "";
-                            this.chatbotMessages.push({ from: "bot", text: "Fragman eklendi! Başka ne yapalım? (Etiketler vs. yoksa 'Bitir')" });
+                            this.chatbotMessages.push({ from: "bot", text: "Fragman eklendi! Başka ne yapalım? (Etiketler, galeri resmi vs. yoksa 'Bitir')" });
                             this.chatbotState = "extra";
                         } else {
                             this.chatbotMessages.push({ from: "bot", text: "'Tamam' demedin, emin misin? Devam etmek için 'Tamam' yaz." });
                         }
                     } else if (this.chatbotState === "tags") {
                         this.newVideo.tags = this.chatbotInput;
-                        this.chatbotMessages.push({ from: "bot", text: "Etiketler eklendi! Başka ne yapalım? (Fragman vs. yoksa 'Bitir')" });
+                        this.chatbotMessages.push({ from: "bot", text: "Etiketler eklendi! Başka ne yapalım? (Fragman, galeri resmi vs. yoksa 'Bitir')" });
                         this.chatbotState = "extra";
+                    } else if (this.chatbotState === "gallery") {
+                        if (this.isValidUrl(this.chatbotInput)) {
+                            this.newVideo.gallery.push({ url: this.chatbotInput, description: "" });
+                            this.chatbotPreview = this.chatbotInput;
+                            this.chatbotMessages.push({ from: "bot", text: "Galeri resmi önizlemesi yukarıda. Sorun yoksa 'Tamam' deyip devam edelim mi?" });
+                            this.chatbotState = "confirm-gallery";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, lütfen çalışan bir resim URL’si ver (örn. .jpg, .png)!" });
+                        }
+                    } else if (this.chatbotState === "confirm-gallery") {
+                        if (this.chatbotInput.toLowerCase() === "tamam") {
+                            this.chatbotPreview = "";
+                            this.chatbotMessages.push({ from: "bot", text: "Galeri resmi eklendi! Başka bir resim eklemek ister misin? Evetse 'Evet', hayırsa 'Bitir' ya da başka bir şey eklemek için söyle." });
+                            this.chatbotState = "extra-gallery";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "'Tamam' demedin, emin misin? Devam etmek için 'Tamam' yaz." });
+                        }
+                    } else if (this.chatbotState === "extra-gallery") {
+                        if (this.chatbotInput.toLowerCase() === "evet") {
+                            this.chatbotMessages.push({ from: "bot", text: "Bir resim URL’si daha ver." });
+                            this.chatbotState = "gallery";
+                        } else if (this.chatbotInput.toLowerCase() === "bitir") {
+                            this.addVideo();
+                            this.chatbotMessages.push({ from: "bot", text: "Her şey tamam, video eklendi! Başka ne yapalım?" });
+                            this.chatbotState = "initial";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Anlamadım, başka resim mi ekleyelim ('Evet'), yoksa 'Bitir' deyip kaydedelim mi? Fragman, etiketler de ekleyebilirsin." });
+                        }
+                    } else if (this.chatbotState === "edit-select") {
+                        const video = this.videos.find(v => v.title.toLowerCase() === this.chatbotInput.toLowerCase());
+                        if (video) {
+                            this.editVideo = { ...video, tags: video.tags.join(', '), gallery: video.gallery ? [...video.gallery] : [] };
+                            this.editIndex = this.videos.indexOf(video);
+                            this.chatbotMessages.push({ from: "bot", text: `"${video.title}" bulundu! Ne düzenlemek istersin? (Başlık, kanal, kapak, video, fragman, etiketler, galeri)" });
+                            this.chatbotState = "edit";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Böyle bir video bulamadım, doğru başlığı yazdığından emin misin?" });
+                        }
+                    } else if (this.chatbotState === "edit") {
+                        if (this.chatbotInput.toLowerCase().includes("başlık")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Yeni başlık ne olsun?" });
+                            this.chatbotState = "edit-title";
+                        } else if (this.chatbotInput.toLowerCase().includes("kanal")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Hangi kanala taşıyalım?" });
+                            this.chatbotState = "edit-channel";
+                        } else if (this.chatbotInput.toLowerCase().includes("kapak")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Yeni kapak görseli URL’sini ver." });
+                            this.chatbotState = "edit-cover";
+                        } else if (this.chatbotInput.toLowerCase().includes("video")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Yeni video URL’sini ver." });
+                            this.chatbotState = "edit-video";
+                        } else if (this.chatbotInput.toLowerCase().includes("fragman")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Yeni fragman URL’sini ver." });
+                            this.chatbotState = "edit-trailer";
+                        } else if (this.chatbotInput.toLowerCase().includes("etiket")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Yeni etiketleri virgülle ayırarak yaz (örn. aksiyon, macera)." });
+                            this.chatbotState = "edit-tags";
+                        } else if (this.chatbotInput.toLowerCase().includes("galeri")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Yeni galeri resmi URL’sini ver." });
+                            this.chatbotState = "edit-gallery";
+                        } else if (this.chatbotInput.toLowerCase() === "bitir") {
+                            this.saveEdit();
+                            this.chatbotMessages.push({ from: "bot", text: "Düzenlemeler kaydedildi! Başka ne yapalım?" });
+                            this.chatbotState = "initial";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Anlamadım, neyi düzenleyelim? (Başlık, kanal, kapak, video, fragman, etiketler, galeri) Ya da 'Bitir' deyip kaydedelim." });
+                        }
+                    } else if (this.chatbotState === "edit-title") {
+                        this.editVideo.title = this.chatbotInput;
+                        this.chatbotMessages.push({ from: "bot", text: "Başlık güncellendi! Başka ne düzenleyelim? (Kanal, kapak, video, fragman, etiketler, galeri) Ya da 'Bitir' de." });
+                        this.chatbotState = "edit";
+                    } else if (this.chatbotState === "edit-channel") {
+                        this.editVideo.channel = this.chatbotInput;
+                        this.chatbotMessages.push({ from: "bot", text: "Kanal güncellendi! Başka ne düzenleyelim? (Başlık, kapak, video, fragman, etiketler, galeri) Ya da 'Bitir' de." });
+                        this.chatbotState = "edit";
+                    } else if (this.chatbotState === "edit-cover") {
+                        if (this.isValidUrl(this.chatbotInput)) {
+                            this.editVideo.cover = this.chatbotInput;
+                            this.chatbotPreview = this.chatbotInput;
+                            this.chatbotMessages.push({ from: "bot", text: "Kapak görseli önizlemesi yukarıda. Sorun yoksa 'Tamam' de." });
+                            this.chatbotState = "edit-confirm-cover";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz, lütfen çalışan bir resim URL’si ver!" });
+                        }
+                    } else if (this.chatbotState === "edit-confirm-cover") {
+                        if (this.chatbotInput.toLowerCase() === "tamam") {
+                            this.chatbotPreview = "";
+                            this.chatbotMessages.push({ from: "bot", text: "Kapak görseli güncellendi! Başka ne düzenleyelim? (Başlık, kanal, video, fragman, etiketler, galeri) Ya da 'Bitir' de." });
+                            this.chatbotState = "edit";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "'Tamam' demedin, emin misin? Devam etmek için 'Tamam' yaz." });
+                        }
+                    } else if (this.chatbotState === "edit-video") {
+                        if (this.isValidUrl(this.chatbotInput)) {
+                            this.editVideo.video = this.chatbotInput;
+                            this.chatbotPreview = this.chatbotInput;
+                            this.chatbotMessages.push({ from: "bot", text: "Video önizlemesi yukarıda. Sorun yoksa 'Tamam' de." });
+                            this.chatbotState = "edit-confirm-video";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz, lütfen çalışan bir video URL’si ver!" });
+                        }
+                    } else if (this.chatbotState === "edit-confirm-video") {
+                        if (this.chatbotInput.toLowerCase() === "tamam") {
+                            this.chatbotPreview = "";
+                            this.chatbotMessages.push({ from: "bot", text: "Video güncellendi! Başka ne düzenleyelim? (Başlık, kanal, kapak, fragman, etiketler, galeri) Ya da 'Bitir' de." });
+                            this.chatbotState = "edit";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "'Tamam' demedin, emin misin? Devam etmek için 'Tamam' yaz." });
+                        }
+                    } else if (this.chatbotState === "edit-trailer") {
+                        if (this.isValidUrl(this.chatbotInput)) {
+                            this.editVideo.trailer = this.chatbotInput;
+                            this.chatbotPreview = this.chatbotInput;
+                            this.chatbotMessages.push({ from: "bot", text: "Fragman önizlemesi yukarıda. Sorun yoksa 'Tamam' de." });
+                            this.chatbotState = "edit-confirm-trailer";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz, lütfen çalışan bir video URL’si ver!" });
+                        }
+                    } else if (this.chatbotState === "edit-confirm-trailer") {
+                        if (this.chatbotInput.toLowerCase() === "tamam") {
+                            this.chatbotPreview = "";
+                            this.chatbotMessages.push({ from: "bot", text: "Fragman güncellendi! Başka ne düzenleyelim? (Başlık, kanal, kapak, video, etiketler, galeri) Ya da 'Bitir' de." });
+                            this.chatbotState = "edit";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "'Tamam' demedin, emin misin? Devam etmek için 'Tamam' yaz." });
+                        }
+                    } else if (this.chatbotState === "edit-tags") {
+                        this.editVideo.tags = this.chatbotInput;
+                        this.chatbotMessages.push({ from: "bot", text: "Etiketler güncellendi! Başka ne düzenleyelim? (Başlık, kanal, kapak, video, fragman, galeri) Ya da 'Bitir' de." });
+                        this.chatbotState = "edit";
+                    } else if (this.chatbotState === "edit-gallery") {
+                        if (this.isValidUrl(this.chatbotInput)) {
+                            this.editVideo.gallery.push({ url: this.chatbotInput, description: "" });
+                            this.chatbotPreview = this.chatbotInput;
+                            this.chatbotMessages.push({ from: "bot", text: "Galeri resmi önizlemesi yukarıda. Sorun yoksa 'Tamam' de." });
+                            this.chatbotState = "edit-confirm-gallery";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz, lütfen çalışan bir resim URL’si ver!" });
+                        }
+                    } else if (this.chatbotState === "edit-confirm-gallery") {
+                        if (this.chatbotInput.toLowerCase() === "tamam") {
+                            this.chatbotPreview = "";
+                            this.chatbotMessages.push({ from: "bot", text: "Galeri resmi eklendi! Başka ne düzenleyelim? (Başlık, kanal, kapak, video, fragman, etiketler, galeri) Ya da 'Bitir' de." });
+                            this.chatbotState = "edit";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "'Tamam' demedin, emin misin? Devam etmek için 'Tamam' yaz." });
+                        }
                     }
                     
                     this.chatbotInput = "";
