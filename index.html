@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hayalini İzle</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,10 +16,9 @@
             position: relative;
             margin: 0;
         }
-        .admin-btn {
+        .admin-btn, .chatbot-btn {
             position: absolute;
             top: 10px;
-            right: 20px;
             padding: 10px 15px;
             background: #007BFF;
             color: white;
@@ -25,9 +26,28 @@
             cursor: pointer;
             font-size: 16px;
         }
+        .admin-btn { right: 80px; }
+        .chatbot-btn {
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-size: cover;
+            background-repeat: no-repeat;
+            transition: transform 0.2s;
+        }
+        .chatbot-btn:hover { transform: scale(1.1); }
+        .search-bar {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            padding: 5px;
+            background: #3c3c3c;
+            color: #ffffff;
+            border: 1px solid #555;
+        }
         h2 {
             text-align: center;
-            margin: 0 0 20px 0;
+            margin: 20px 0;
         }
         .channel-container {
             display: flex;
@@ -174,6 +194,13 @@
             display: flex;
             align-items: center;
             margin: 8px 0;
+            cursor: move;
+        }
+        .gallery-item.dragging {
+            opacity: 0.7;
+        }
+        .gallery-item.over {
+            border: 2px dashed green;
         }
         .gallery-item label {
             flex-grow: 1;
@@ -192,11 +219,15 @@
         .gallery-controls .delete-btn {
             background: #ff4444;
         }
-        .gallery-controls .move-up-btn {
+        .gallery-controls .edit-btn {
             background: #007BFF;
         }
-        .gallery-controls .move-down-btn {
-            background: #007BFF;
+        .gallery-preview img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            margin-left: 10px;
+            cursor: pointer;
         }
         .add-gallery-btn {
             padding: 5px 10px;
@@ -257,9 +288,15 @@
             gap: 10px;
             margin-top: 20px;
         }
+        @media (max-width: 768px) {
+            .gallery { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .gallery { grid-template-columns: repeat(2, 1fr); }
+        }
         .gallery img {
             width: 100%;
-            height: 100px;
+            max-height: 100px;
             object-fit: cover;
             cursor: pointer;
         }
@@ -326,30 +363,149 @@
             cursor: pointer;
             color: #ffffff;
         }
+        .search-page .channels {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .search-page .channel {
+            margin: 0;
+        }
+        .search-page .channel img {
+            width: 150px;
+            height: 100px;
+            object-fit: cover;
+        }
+        .search-page .channel-name {
+            background: #2c2c2c;
+            padding: 5px;
+            text-align: center;
+        }
+        .search-page .videos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0;
+        }
+        .search-page .video img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+        }
+        .search-page .video-title {
+            background: #000000;
+            padding: 5px;
+            text-align: center;
+        }
+        .video-page {
+            display: flex;
+            height: 100vh;
+        }
+        .video-page .gallery-side {
+            width: 50%;
+            padding: 20px;
+            background: #2c2c2c;
+        }
+        .video-page .gallery-side img {
+            width: 100%;
+            max-height: 60vh;
+            object-fit: contain;
+        }
+        .video-page .video-side {
+            width: 50%;
+            padding: 20px;
+            background: #1a1a1a;
+        }
+        .video-page video {
+            width: 100%;
+            max-height: 400px;
+        }
+        .croppie-container {
+            margin: 20px 0;
+        }
+        .preview-box {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #555;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .preview-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .chatbot-messages {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .bot-msg { color: #007BFF; text-align: left; }
+        .user-msg { color: #ffffff; text-align: right; }
     </style>
 </head>
 <body>
     <div id="app">
+        <input v-if="!isSearchPage && !isVideoPage" type="text" class="search-bar" v-model="searchQuery" placeholder="Ara (ör. oyuncu ismi)" @keyup.enter="searchContent">
         <button class="admin-btn" @click="toggleAdmin">Yönetici Paneli</button>
-        <h2>Hayalini İzle</h2>
+        <button id="chatbot-btn" class="chatbot-btn" @click="handleChatbotClick" @dblclick="openGifUploadModal" :style="{ backgroundImage: 'url(' + customChatbotGif + ')' }"></button>
 
-        <div v-if="!selectedChannel" class="channel-container">
-            <div v-for="(channel, index) in channels" :key="index" class="channel-card" @click="selectChannel(channel)">
-                <img :src="channel.cover" alt="Kanal Kapak">
-                <div>{{ channel.name }}</div>
+        <!-- Ana Sayfa -->
+        <div v-if="!isSearchPage && !isVideoPage">
+            <h2>Hayalini İzle</h2>
+            <div v-if="!selectedChannel" class="channel-container">
+                <div v-for="(channel, index) in channels" :key="index" class="channel-card" @click="selectChannel(channel)">
+                    <img :src="channel.cover" alt="Kanal Kapak">
+                    <div>{{ channel.name }}</div>
+                </div>
+            </div>
+            <div v-if="selectedChannel" class="video-container">
+                <input type="text" v-model="searchVideoQuery" placeholder="Video ara...">
+                <div v-for="(video, index) in filteredVideos" :key="index" class="video-card">
+                    <img :src="video.cover" alt="Kapak Görseli" @click="openGalleryModal(video)">
+                    <div class="preview-container">
+                        <button class="preview-button" @click="openVideoModal(video, true)">Fragman</button>
+                        <button class="preview-button" @click="openVideoModal(video, false)">Video</button>
+                    </div>
+                    <div class="video-title">{{ video.title }}</div>
+                </div>
+                <button @click="backToChannels" style="margin-top: 20px; padding: 10px; background: #007BFF; color: white; border: none;">Kanallara Geri Dön</button>
             </div>
         </div>
 
-        <div v-if="selectedChannel" class="video-container">
-            <div v-for="(video, index) in filteredVideos" :key="index" class="video-card">
-                <img :src="video.cover" alt="Kapak Görseli" @click="openGalleryModal(video)">
-                <div class="preview-container">
-                    <button class="preview-button" @click="openVideoModal(video, true)">Fragman</button>
-                    <button class="preview-button" @click="openVideoModal(video, false)">Video</button>
+        <!-- Arama Sayfası -->
+        <div v-if="isSearchPage" class="search-page">
+            <h2>Arama Sonuçları: "{{ searchQuery }}"</h2>
+            <button @click="backToMain" style="padding: 10px; background: #007BFF; color: white; border: none;">Geri</button>
+            <div class="channels">
+                <div v-for="(channel, cIndex) in filteredChannels" :key="cIndex" class="channel">
+                    <img :src="channel.cover" alt="Kanal Kapak">
+                    <div class="channel-name">{{ channel.name }}</div>
+                    <div class="videos">
+                        <div v-for="(video, vIndex) in channelVideos(channel)" :key="vIndex" class="video">
+                            <img :src="video.cover" alt="Video Kapak" @click="openVideoPage(video)">
+                            <div class="video-title">{{ video.title }}</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="video-title">{{ video.title }}</div>
             </div>
-            <button @click="backToChannels" style="margin-top: 20px; padding: 10px; background: #007BFF; color: white; border: none;">Kanallara Geri Dön</button>
+        </div>
+
+        <!-- Video Sayfası -->
+        <div v-if="isVideoPage" class="video-page">
+            <div class="gallery-side">
+                <img :src="selectedVideo.gallery[currentImageIndex].url" alt="Galeri Resmi">
+                <div class="slide-controls">
+                    <button class="slide-button" @click="prevImage">Önceki</button>
+                    <button class="slide-button" @click="nextImage">Sonraki</button>
+                </div>
+            </div>
+            <div class="video-side">
+                <h3>{{ selectedVideo.title }}</h3>
+                <video controls :src="isTrailer ? selectedVideo.trailer : selectedVideo.video"></video>
+                <div class="switch-buttons">
+                    <button class="switch-button" v-if="isTrailer" @click="switchToVideo">Video</button>
+                    <button class="switch-button" v-if="!isTrailer" @click="switchToTrailer">Fragman</button>
+                </div>
+                <button @click="backToSearch" style="margin-top: 20px; padding: 10px; background: #007BFF; color: white; border: none;">Geri</button>
+            </div>
         </div>
 
         <!-- Video Oynatma Modal -->
@@ -370,13 +526,14 @@
             <div class="modal-content">
                 <span class="close" @click="closeGalleryModal">×</span>
                 <h3>{{ selectedVideo.title }} - Galeri</h3>
+                <input type="text" v-model="searchGalleryQuery" placeholder="Galeri ara...">
                 <div class="gallery">
-                    <img v-for="(img, idx) in selectedVideo.gallery" :key="idx" v-if="img" :src="img" alt="Galeri Resmi" @click="openImageModal(img, idx)">
+                    <img v-for="(item, idx) in filteredGallery" :key="idx" :src="item.url" alt="Galeri Resmi" @click="openImageModal(item.url, idx)">
                 </div>
             </div>
         </div>
 
-        <!-- Büyük Resim ve Slayt Modal -->
+        <!-- Büyük Resim Modal -->
         <div v-if="isImageModalOpen" class="modal" @click.self="closeImageModal">
             <div class="image-modal">
                 <span class="close" @click="closeImageModal">×</span>
@@ -436,16 +593,18 @@
                     <h3>Yeni Video Yükle</h3>
                     <label><span>Kanal:</span> <input type="text" v-model="newVideo.channel" readonly></label>
                     <label><span>Başlık:</span> <input type="text" v-model="newVideo.title"></label>
+                    <label><span>Etiketler:</span> <input type="text" v-model="newVideo.tags" placeholder="örn. Tom Hanks, aksiyon"></label>
                     <label><span>Kapak Görseli:</span> <input type="file" @change="handleCoverUpload"> veya <input type="text" v-model="newVideo.cover"></label>
                     <label><span>Fragman:</span> <input type="file" @change="handleTrailerUpload"> veya <input type="text" v-model="newVideo.trailer"></label>
                     <label><span>Video:</span> <input type="file" @change="handleVideoUpload"> veya <input type="text" v-model="newVideo.video"></label>
                     <div class="gallery-section">
-                        <div v-for="(img, index) in newVideo.gallery" :key="index" class="gallery-item">
-                            <label><span>Galeri Resmi {{ index + 1 }}:</span> <input type="file" accept="image/*" @change="handleGalleryUpload($event, index)"> veya <input type="text" v-model="newVideo.gallery[index]" placeholder="Resim veya GIF URL"></label>
+                        <div v-for="(item, index) in newVideo.gallery" :key="index" class="gallery-item" draggable="true" @dragstart="dragStart($event, index, 'newVideo')" @dragover="dragOver($event)" @drop="drop($event, index, 'newVideo')">
+                            <label><span>Resim {{ index + 1 }}:</span> <input type="file" accept="image/*" @change="handleGalleryUpload($event, index)"> veya <input type="text" v-model="item.url" placeholder="Resim veya GIF URL"></label>
+                            <label><span>Açıklama:</span> <input type="text" v-model="item.description" placeholder="Resim açıklaması"></label>
+                            <div class="gallery-preview"><img v-if="item.url" :src="item.url" @dblclick="openImageModal(item.url, index)"></div>
                             <div class="gallery-controls">
+                                <button class="edit-btn" @click="openEditImageModal(index, 'newVideo')">Düzenle</button>
                                 <button class="delete-btn" @click="deleteGalleryField(index)">Sil</button>
-                                <button class="move-up-btn" @click="moveGalleryUp(index, 'newVideo')" :disabled="index === 0">↑</button>
-                                <button class="move-down-btn" @click="moveGalleryDown(index, 'newVideo')" :disabled="index === newVideo.gallery.length - 1">↓</button>
                             </div>
                         </div>
                         <button class="add-gallery-btn" @click="addGalleryField">+</button>
@@ -460,9 +619,20 @@
             <div class="edit-modal">
                 <span class="close" @click="closeEditModal">×</span>
                 <div class="edit-left">
-                    <h3>Videolar</h3>
+                    <h3>Kanallar</h3>
+                    <input type="text" v-model="searchChannelQuery" placeholder="Kanal ara...">
+                    <div class="channel-list">
+                        <div v-for="(channel, index) in filteredChannels" :key="index" class="channel-item" @click="selectEditChannel(channel)">
+                            <img :src="channel.cover" alt="Kanal Kapak">
+                            <span>{{ channel.name }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="edit-right" v-if="selectedEditChannel">
+                    <h3>{{ selectedEditChannel.name }} - Videolar</h3>
+                    <input type="text" v-model="searchVideoQuery" placeholder="Video ara...">
                     <div class="edit-list">
-                        <div v-for="(video, index) in videos" :key="index" class="edit-item">
+                        <div v-for="(video, index) in filteredEditVideos" :key="index" class="edit-item">
                             <img :src="video.cover" alt="Kapak">
                             <span>{{ video.title }}</span>
                             <button @click="openVideoEditModal(video, index)">Düzenle</button>
@@ -472,31 +642,67 @@
                 </div>
                 <div class="edit-right" v-if="editVideo">
                     <h3>{{ editVideo.title }} Düzenle</h3>
-                    <div class="channel-list">
-                        <div v-for="(channel, index) in channels" :key="index" class="channel-item">
-                            <img :src="channel.cover" alt="Kanal Kapak">
-                            <span>{{ channel.name }}</span>
-                            <button @click="assignEditChannel(channel)">+</button>
-                        </div>
-                    </div>
                     <label><span>Kanal:</span> <input type="text" v-model="editVideo.channel" readonly></label>
                     <label><span>Başlık:</span> <input type="text" v-model="editVideo.title"></label>
+                    <label><span>Etiketler:</span> <input type="text" v-model="editVideo.tags" placeholder="örn. Tom Hanks, aksiyon"></label>
                     <label><span>Kapak Görseli:</span> <input type="file" @change="updateCoverUpload"> veya <input type="text" v-model="editVideo.cover"></label>
                     <label><span>Fragman:</span> <input type="file" @change="updateTrailerUpload"> veya <input type="text" v-model="editVideo.trailer"></label>
                     <label><span>Video:</span> <input type="file" @change="updateVideoUpload"> veya <input type="text" v-model="editVideo.video"></label>
                     <div class="gallery-section">
-                        <div v-for="(img, index) in editVideo.gallery" :key="index" class="gallery-item">
-                            <label><span>Galeri Resmi {{ index + 1 }}:</span> <input type="file" accept="image/*" @change="updateGalleryUpload($event, index)"> veya <input type="text" v-model="editVideo.gallery[index]" placeholder="Resim veya GIF URL"></label>
+                        <div v-for="(item, index) in editVideo.gallery" :key="index" class="gallery-item" draggable="true" @dragstart="dragStart($event, index, 'editVideo')" @dragover="dragOver($event)" @drop="drop($event, index, 'editVideo')">
+                            <label><span>Resim {{ index + 1 }}:</span> <input type="file" accept="image/*" @change="updateGalleryUpload($event, index)"> veya <input type="text" v-model="item.url" placeholder="Resim veya GIF URL"></label>
+                            <label><span>Açıklama:</span> <input type="text" v-model="item.description" placeholder="Resim açıklaması"></label>
+                            <div class="gallery-preview"><img v-if="item.url" :src="item.url" @dblclick="openImageModal(item.url, index)"></div>
                             <div class="gallery-controls">
+                                <button class="edit-btn" @click="openEditImageModal(index, 'editVideo')">Düzenle</button>
                                 <button class="delete-btn" @click="deleteEditGalleryField(index)">Sil</button>
-                                <button class="move-up-btn" @click="moveGalleryUp(index, 'editVideo')" :disabled="index === 0">↑</button>
-                                <button class="move-down-btn" @click="moveGalleryDown(index, 'editVideo')" :disabled="index === editVideo.gallery.length - 1">↓</button>
                             </div>
                         </div>
                         <button class="add-gallery-btn" @click="addEditGalleryField">+</button>
                     </div>
                     <button @click="saveEdit" class="admin-button">Kaydet</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Resim Düzenleme Modal -->
+        <div v-if="isEditImageModalOpen" class="modal" @click.self="closeEditImageModal">
+            <div class="modal-content">
+                <span class="close" @click="closeEditImageModal">×</span>
+                <h3>Resmi Düzenle</h3>
+                <div id="croppie-container" class="croppie-container"></div>
+                <div class="preview-box">
+                    <img :src="previewImage" alt="Önizleme">
+                </div>
+                <div style="margin-top: 10px;">
+                    <button @click="rotateImage(90)">Döndür 90°</button>
+                    <button @click="rotateImage(-90)">Döndür -90°</button>
+                    <button @click="saveEditedImage" style="background: #28a745;">Kaydet</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sohbet Botu Modal -->
+        <div v-if="isChatbotOpen" class="modal" @click.self="closeChatbot">
+            <div class="modal-content">
+                <span class="close" @click="closeChatbot">×</span>
+                <h3>Sohbet Botu</h3>
+                <div class="chatbot-messages">
+                    <p v-for="(msg, idx) in chatbotMessages" :key="idx" :class="msg.from === 'bot' ? 'bot-msg' : 'user-msg'">{{ msg.text }}</p>
+                    <img v-if="chatbotPreview" :src="chatbotPreview" alt="Önizleme" style="max-width: 100px; margin: 10px auto; display: block;">
+                </div>
+                <input type="text" v-model="chatbotInput" @keyup.enter="sendChatbotMessage" placeholder="Mesaj yaz...">
+            </div>
+        </div>
+
+        <!-- GIF Yükleme Modal -->
+        <div v-if="isGifUploadOpen" class="modal" @click.self="closeGifUploadModal">
+            <div class="modal-content">
+                <span class="close" @click="closeGifUploadModal">×</span>
+                <h3>GIF Yükle</h3>
+                <input type="file" accept="image/gif" @change="uploadChatbotGif">
+                <input type="text" v-model="gifUrl" placeholder="GIF URL’si gir">
+                <button @click="applyGifUrl">Uygula</button>
             </div>
         </div>
     </div>
@@ -508,25 +714,88 @@
                 videos: JSON.parse(localStorage.getItem('videos')) || [],
                 channels: JSON.parse(localStorage.getItem('channels')) || [],
                 selectedChannel: null,
+                selectedEditChannel: null,
                 isAdminOpen: false,
                 isVideoModalOpen: false,
                 isGalleryModalOpen: false,
                 isUploadOpen: false,
                 isEditOpen: false,
                 isImageModalOpen: false,
+                isEditImageModalOpen: false,
+                isSearchPage: false,
+                isVideoPage: false,
+                isChatbotOpen: false,
+                isGifUploadOpen: false,
                 isTrailer: true,
                 selectedVideo: null,
                 selectedImage: null,
                 currentImageIndex: 0,
-                newVideo: { channel: "", title: "", cover: "", trailer: "", video: "", gallery: [] },
+                searchQuery: "",
+                searchVideoQuery: "",
+                searchGalleryQuery: "",
+                searchChannelQuery: "",
+                newVideo: { channel: "", title: "", tags: "", cover: "", trailer: "", video: "", gallery: [] },
                 newChannel: { name: "", cover: "" },
                 editVideo: null,
-                editIndex: -1
+                editIndex: -1,
+                editImageUrl: "",
+                editImageTarget: "",
+                editImageIndex: -1,
+                dragIndex: -1,
+                croppie: null,
+                previewImage: "",
+                chatbotMessages: [],
+                chatbotInput: "",
+                chatbotState: "initial",
+                chatbotPreview: "",
+                gifUrl: "",
+                customChatbotGif: "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" // Varsayılan GIF
             },
             computed: {
                 filteredVideos() {
                     if (!this.selectedChannel) return [];
-                    return this.videos.filter(video => video.channel === this.selectedChannel.name);
+                    let videos = this.videos.filter(video => video.channel === this.selectedChannel.name);
+                    if (this.searchVideoQuery) {
+                        return videos.filter(video => video.title.toLowerCase().includes(this.searchVideoQuery.toLowerCase()));
+                    }
+                    return videos;
+                },
+                filteredGallery() {
+                    if (!this.searchGalleryQuery) return this.selectedVideo.gallery;
+                    return this.selectedVideo.gallery.filter(item => 
+                        item.description.toLowerCase().includes(this.searchGalleryQuery.toLowerCase())
+                    );
+                },
+                filteredChannels() {
+                    if (this.isSearchPage) {
+                        return this.channels.filter(channel => 
+                            this.videos.some(video => 
+                                video.channel === channel.name && 
+                                video.tags.toLowerCase().includes(this.searchQuery.toLowerCase())
+                            )
+                        );
+                    }
+                    if (this.isEditOpen && this.searchChannelQuery) {
+                        return this.channels.filter(channel => 
+                            channel.name.toLowerCase().includes(this.searchChannelQuery.toLowerCase())
+                        );
+                    }
+                    return this.channels;
+                },
+                filteredEditVideos() {
+                    if (!this.selectedEditChannel) return [];
+                    let videos = this.videos.filter(video => video.channel === this.selectedEditChannel.name);
+                    if (this.searchVideoQuery) {
+                        return videos.filter(video => video.title.toLowerCase().includes(this.searchVideoQuery.toLowerCase()));
+                    }
+                    return videos;
+                },
+                mostUsedChannel() {
+                    const channelCount = {};
+                    this.videos.forEach(video => {
+                        channelCount[video.channel] = (channelCount[video.channel] || 0) + 1;
+                    });
+                    return Object.keys(channelCount).sort((a, b) => channelCount[b] - channelCount[a])[0] || "";
                 }
             },
             mounted() {
@@ -559,17 +828,17 @@
                 },
                 closeImageModal() { this.isImageModalOpen = false; },
                 prevImage() {
-                    const validImages = this.selectedVideo.gallery.filter(img => img);
+                    const validImages = this.isVideoPage ? this.selectedVideo.gallery : this.selectedVideo.gallery.filter(img => img.url);
                     this.currentImageIndex = (this.currentImageIndex - 1 + validImages.length) % validImages.length;
-                    this.selectedImage = validImages[this.currentImageIndex];
+                    this.selectedImage = validImages[this.currentImageIndex].url;
                 },
                 nextImage() {
-                    const validImages = this.selectedVideo.gallery.filter(img => img);
+                    const validImages = this.isVideoPage ? this.selectedVideo.gallery : this.selectedVideo.gallery.filter(img => img.url);
                     this.currentImageIndex = (this.currentImageIndex + 1) % validImages.length;
-                    this.selectedImage = validImages[this.currentImageIndex];
+                    this.selectedImage = validImages[this.currentImageIndex].url;
                 },
                 handleKeyPress(event) {
-                    if (!this.isImageModalOpen) return;
+                    if (!this.isImageModalOpen && !this.isVideoPage) return;
                     if (event.key === 'ArrowLeft') this.prevImage();
                     if (event.key === 'ArrowRight') this.nextImage();
                 },
@@ -580,31 +849,39 @@
                 handleCoverUpload(event) { this.newVideo.cover = URL.createObjectURL(event.target.files[0]); },
                 handleTrailerUpload(event) { this.newVideo.trailer = URL.createObjectURL(event.target.files[0]); },
                 handleVideoUpload(event) { this.newVideo.video = URL.createObjectURL(event.target.files[0]); },
-                handleGalleryUpload(event, index) { this.$set(this.newVideo.gallery, index, URL.createObjectURL(event.target.files[0])); },
+                handleGalleryUpload(event, index) { this.$set(this.newVideo.gallery, index, { url: URL.createObjectURL(event.target.files[0]), description: this.newVideo.gallery[index].description }); },
                 handleChannelCoverUpload(event) { this.newChannel.cover = URL.createObjectURL(event.target.files[0]); },
-                addGalleryField() { this.newVideo.gallery.push(""); },
-                addEditGalleryField() { this.editVideo.gallery.push(""); },
+                addGalleryField() { this.newVideo.gallery.push({ url: "", description: "" }); },
+                addEditGalleryField() { this.editVideo.gallery.push({ url: "", description: "" }); },
                 deleteGalleryField(index) { this.newVideo.gallery.splice(index, 1); },
                 deleteEditGalleryField(index) { this.editVideo.gallery.splice(index, 1); },
-                moveGalleryUp(index, target) {
-                    if (index > 0) {
-                        const gallery = this[target].gallery;
-                        [gallery[index], gallery[index - 1]] = [gallery[index - 1], gallery[index]];
-                        this.$set(this[target], 'gallery', [...gallery]);
-                    }
+                dragStart(event, index, target) {
+                    this.dragIndex = index;
+                    event.dataTransfer.setData('text/plain', index);
+                    event.target.classList.add('dragging');
                 },
-                moveGalleryDown(index, target) {
-                    if (index < this[target].gallery.length - 1) {
-                        const gallery = this[target].gallery;
-                        [gallery[index], gallery[index + 1]] = [gallery[index + 1], gallery[index]];
-                        this.$set(this[target], 'gallery', [...gallery]);
-                    }
+                dragOver(event) {
+                    event.preventDefault();
+                    event.target.closest('.gallery-item').classList.add('over');
+                },
+                drop(event, index, target) {
+                    event.preventDefault();
+                    const fromIndex = this.dragIndex;
+                    const toIndex = index;
+                    const gallery = this[target].gallery;
+                    const [dragged] = gallery.splice(fromIndex, 1);
+                    gallery.splice(toIndex, 0, dragged);
+                    this.$set(this[target], 'gallery', [...gallery]);
+                    document.querySelectorAll('.gallery-item').forEach(item => {
+                        item.classList.remove('dragging', 'over');
+                    });
                 },
                 addVideo() {
                     if (this.newVideo.title && this.newVideo.cover && this.newVideo.video && this.newVideo.channel) {
+                        this.newVideo.tags = this.newVideo.tags.split(',').map(tag => tag.trim());
                         this.videos.unshift({ ...this.newVideo, gallery: [...this.newVideo.gallery] });
                         this.saveVideos();
-                        this.newVideo = { channel: "", title: "", cover: "", trailer: "", video: "", gallery: [] };
+                        this.newVideo = { channel: "", title: "", tags: "", cover: "", trailer: "", video: "", gallery: [] };
                         this.closeUploadModal();
                     }
                 },
@@ -627,16 +904,17 @@
                     this.saveVideos();
                 },
                 assignChannel(channel) { this.newVideo.channel = channel.name; },
-                assignEditChannel(channel) { this.editVideo.channel = channel.name; },
+                selectEditChannel(channel) { this.selectedEditChannel = channel; this.editVideo = null; },
                 openVideoEditModal(video, index) {
-                    this.editVideo = { ...video, gallery: video.gallery ? [...video.gallery] : [] };
+                    this.editVideo = { ...video, tags: video.tags.join(', '), gallery: video.gallery ? [...video.gallery] : [] };
                     this.editIndex = index;
                 },
                 updateCoverUpload(event) { this.editVideo.cover = URL.createObjectURL(event.target.files[0]); },
                 updateTrailerUpload(event) { this.editVideo.trailer = URL.createObjectURL(event.target.files[0]); },
                 updateVideoUpload(event) { this.editVideo.video = URL.createObjectURL(event.target.files[0]); },
-                updateGalleryUpload(event, index) { this.$set(this.editVideo.gallery, index, URL.createObjectURL(event.target.files[0])); },
+                updateGalleryUpload(event, index) { this.$set(this.editVideo.gallery, index, { url: URL.createObjectURL(event.target.files[0]), description: this.editVideo.gallery[index].description }); },
                 saveEdit() {
+                    this.editVideo.tags = this.editVideo.tags.split(',').map(tag => tag.trim());
                     this.$set(this.videos, this.editIndex, { ...this.editVideo, gallery: [...this.editVideo.gallery] });
                     this.saveVideos();
                     this.editVideo = null;
@@ -646,7 +924,215 @@
                     this.saveVideos();
                 },
                 saveVideos() { localStorage.setItem('videos', JSON.stringify(this.videos)); },
-                saveChannels() { localStorage.setItem('channels', JSON.stringify(this.channels)); }
+                saveChannels() { localStorage.setItem('channels', JSON.stringify(this.channels)); },
+                openEditImageModal(index, target) {
+                    this.editImageUrl = this[target].gallery[index].url;
+                    this.editImageTarget = target;
+                    this.editImageIndex = index;
+                    this.isEditImageModalOpen = true;
+                    this.$nextTick(() => {
+                        this.croppie = new Croppie(document.getElementById('croppie-container'), {
+                            viewport: { width: 200, height: 200, type: 'square' },
+                            boundary: { width: 400, height: 400 },
+                            url: this.editImageUrl,
+                            enableResize: true,
+                            enableOrientation: true
+                        });
+                        this.croppie.bind({ url: this.editImageUrl });
+                        this.updatePreview();
+                        this.croppie.element.addEventListener('update', this.updatePreview);
+                    });
+                },
+                closeEditImageModal() {
+                    if (this.croppie) {
+                        this.croppie.element.removeEventListener('update', this.updatePreview);
+                        this.croppie.destroy();
+                        this.croppie = null;
+                    }
+                    this.isEditImageModalOpen = false;
+                    this.previewImage = "";
+                },
+                rotateImage(degrees) {
+                    if (this.croppie) {
+                        this.croppie.rotate(degrees);
+                    }
+                },
+                updatePreview() {
+                    if (this.croppie) {
+                        this.croppie.result({ type: 'base64', size: { width: 100, height: 100 } }).then(preview => {
+                            this.previewImage = preview;
+                        });
+                    }
+                },
+                saveEditedImage() {
+                    if (this.croppie) {
+                        this.croppie.result({ type: 'base64', size: 'original' }).then(croppedImage => {
+                            this.$set(this[this.editImageTarget].gallery, this.editImageIndex, { url: croppedImage, description: this[this.editImageTarget].gallery[this.editImageIndex].description });
+                            this.closeEditImageModal();
+                        });
+                    }
+                },
+                searchContent() {
+                    if (this.searchQuery) {
+                        this.isSearchPage = true;
+                    }
+                },
+                backToMain() {
+                    this.isSearchPage = false;
+                    this.searchQuery = "";
+                },
+                channelVideos(channel) {
+                    return this.videos.filter(video => 
+                        video.channel === channel.name && 
+                        video.tags.some(tag => tag.toLowerCase().includes(this.searchQuery.toLowerCase()))
+                    );
+                },
+                openVideoPage(video) {
+                    this.selectedVideo = video;
+                    this.isVideoPage = true;
+                    this.isTrailer = true;
+                    this.currentImageIndex = 0;
+                    this.selectedImage = video.gallery[0].url;
+                },
+                backToSearch() {
+                    this.isVideoPage = false;
+                },
+                handleChatbotClick() {
+                    if (!this.isChatbotOpen) {
+                        this.isChatbotOpen = true;
+                        this.chatbotMessages = [{ from: "bot", text: "Merhaba! Ne yapalım? (Yükleme, düzenleme vs.)" }];
+                    }
+                },
+                openGifUploadModal() {
+                    this.isGifUploadOpen = true;
+                },
+                closeChatbot() {
+                    this.isChatbotOpen = false;
+                    this.chatbotState = "initial";
+                    this.chatbotMessages = [];
+                    this.chatbotPreview = "";
+                },
+                closeGifUploadModal() {
+                    this.isGifUploadOpen = false;
+                },
+                uploadChatbotGif(event) {
+                    const file = event.target.files[0];
+                    if (file && file.type === "image/gif") {
+                        this.customChatbotGif = URL.createObjectURL(file);
+                        this.closeGifUploadModal();
+                    }
+                },
+                applyGifUrl() {
+                    if (this.gifUrl && this.gifUrl.endsWith(".gif")) {
+                        this.customChatbotGif = this.gifUrl;
+                        this.closeGifUploadModal();
+                    }
+                },
+                sendChatbotMessage() {
+                    if (!this.chatbotInput) return;
+                    this.chatbotMessages.push({ from: "user", text: this.chatbotInput });
+                    
+                    if (this.chatbotState === "initial") {
+                        if (this.chatbotInput.toLowerCase().includes("yükleme")) {
+                            this.chatbotState = "upload";
+                            const suggestion = this.mostUsedChannel ? `En çok "${this.mostUsedChannel}" kanalını kullanmışsın, yine oraya mı ekleyelim?` : "";
+                            this.chatbotMessages.push({ from: "bot", text: `Tamam, başlayalım! Video kapak görseli URL’sini ver. ${suggestion}` });
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Anlamadım, neyi kastediyorsun? Yükleme mi, başka bir şey mi?" });
+                        }
+                    } else if (this.chatbotState === "upload") {
+                        if (this.isValidUrl(this.chatbotInput)) {
+                            this.newVideo.cover = this.chatbotInput;
+                            this.chatbotPreview = this.chatbotInput;
+                            this.chatbotMessages.push({ from: "bot", text: "Kapak görseli önizlemesi yukarıda. 'Tamam' deyip devam edelim mi?" });
+                            this.chatbotState = "confirm-cover";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, başka bir tane dene!" });
+                        }
+                    } else if (this.chatbotState === "confirm-cover") {
+                        if (this.chatbotInput.toLowerCase() === "tamam") {
+                            this.chatbotPreview = "";
+                            this.chatbotMessages.push({ from: "bot", text: "Kapak görseli eklendi! Şimdi video URL’sini ver." });
+                            this.chatbotState = "video";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "'Tamam' demedin, emin misin? Devam etmek için 'Tamam' yaz." });
+                        }
+                    } else if (this.chatbotState === "video") {
+                        if (this.isValidUrl(this.chatbotInput)) {
+                            this.newVideo.video = this.chatbotInput;
+                            this.chatbotPreview = this.chatbotInput;
+                            this.chatbotMessages.push({ from: "bot", text: "Video önizlemesi yukarıda. 'Tamam' deyip devam edelim mi?" });
+                            this.chatbotState = "confirm-video";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, başka bir tane dene!" });
+                        }
+                    } else if (this.chatbotState === "confirm-video") {
+                        if (this.chatbotInput.toLowerCase() === "tamam") {
+                            this.chatbotPreview = "";
+                            this.chatbotMessages.push({ from: "bot", text: "Video eklendi! Başlık ne olsun?" });
+                            this.chatbotState = "title";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "'Tamam' demedin, emin misin? Devam etmek için 'Tamam' yaz." });
+                        }
+                    } else if (this.chatbotState === "title") {
+                        this.newVideo.title = this.chatbotInput;
+                        this.chatbotMessages.push({ from: "bot", text: `Başlık "${this.chatbotInput}" olarak eklendi! Hangi kanala ekleyelim? ${this.mostUsedChannel ? `(Öneri: ${this.mostUsedChannel})` : ""}` });
+                        this.chatbotState = "channel";
+                    } else if (this.chatbotState === "channel") {
+                        this.newVideo.channel = this.chatbotInput;
+                        this.chatbotMessages.push({ from: "bot", text: "Kanal eklendi! Başka bir şey eklemek ister misin? (Fragman, etiketler vs.) Yoksa 'Bitir' deyip kaydedelim mi?" });
+                        this.chatbotState = "extra";
+                    } else if (this.chatbotState === "extra") {
+                        if (this.chatbotInput.toLowerCase() === "bitir") {
+                            this.addVideo();
+                            this.chatbotMessages.push({ from: "bot", text: "Her şey tamam, video eklendi! Başka ne yapalım?" });
+                            this.chatbotState = "initial";
+                        } else if (this.chatbotInput.toLowerCase().includes("fragman")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Fragman URL’sini ver." });
+                            this.chatbotState = "trailer";
+                        } else if (this.chatbotInput.toLowerCase().includes("etiket")) {
+                            this.chatbotMessages.push({ from: "bot", text: "Etiketleri virgülle ayırarak yaz (örn. aksiyon, komedi)." });
+                            this.chatbotState = "tags";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Anlamadım, fragman mı, etiketler mi ekleyelim? Yoksa 'Bitir' deyip kaydedelim mi?" });
+                        }
+                    } else if (this.chatbotState === "trailer") {
+                        if (this.isValidUrl(this.chatbotInput)) {
+                            this.newVideo.trailer = this.chatbotInput;
+                            this.chatbotPreview = this.chatbotInput;
+                            this.chatbotMessages.push({ from: "bot", text: "Fragman önizlemesi yukarıda. 'Tamam' deyip devam edelim mi?" });
+                            this.chatbotState = "confirm-trailer";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "Bu URL geçersiz görünüyor, başka bir tane dene!" });
+                        }
+                    } else if (this.chatbotState === "confirm-trailer") {
+                        if (this.chatbotInput.toLowerCase() === "tamam") {
+                            this.chatbotPreview = "";
+                            this.chatbotMessages.push({ from: "bot", text: "Fragman eklendi! Başka ne yapalım? (Etiketler vs. yoksa 'Bitir')" });
+                            this.chatbotState = "extra";
+                        } else {
+                            this.chatbotMessages.push({ from: "bot", text: "'Tamam' demedin, emin misin? Devam etmek için 'Tamam' yaz." });
+                        }
+                    } else if (this.chatbotState === "tags") {
+                        this.newVideo.tags = this.chatbotInput;
+                        this.chatbotMessages.push({ from: "bot", text: "Etiketler eklendi! Başka ne yapalım? (Fragman vs. yoksa 'Bitir')" });
+                        this.chatbotState = "extra";
+                    }
+                    
+                    this.chatbotInput = "";
+                    this.$nextTick(() => {
+                        const chatbox = document.querySelector(".chatbot-messages");
+                        chatbox.scrollTop = chatbox.scrollHeight;
+                    });
+                },
+                isValidUrl(url) {
+                    try {
+                        new URL(url);
+                        return url.match(/\.(jpeg|jpg|png|gif|mp4)$/i) !== null;
+                    } catch (_) {
+                        return false;
+                    }
+                }
             }
         });
     </script>
